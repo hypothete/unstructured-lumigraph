@@ -1,4 +1,6 @@
-import * as THREE from './node_modules/three/build/three.module.js';
+// import * as THREE from './node_modules/three/build/three.module.js';
+import * as THREE from './vendor/three.module.js';
+import { OrbitControls } from './vendor/OrbitControls.js';
 
 const scene = new THREE.Scene();
 let width = window.innerWidth;
@@ -8,14 +10,19 @@ const renderer = new THREE.WebGLRenderer();
 let fragmentShader, vertexShader;
 
 let poses;
-const worldAxis = new THREE.AxisHelper(5);
+const worldAxis = new THREE.AxesHelper(0.5);
 
 renderer.setSize(width, height);
 document.body.appendChild(renderer.domElement);
-camera.position.set(20, 20, -10);
+camera.position.set(-30, 0, 0);
 camera.lookAt(new THREE.Vector3());
 
-scene.add(camera, worldAxis);
+scene.add(camera); // , worldAxis);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.target = new THREE.Vector3(0,0,0);
+controls.panSpeed = 2;
 
 window.addEventListener('resize', () => {
   width = window.innerWidth;
@@ -30,6 +37,7 @@ loadScene();
 
 function animate() {
 	requestAnimationFrame(animate);
+  controls.update();
 	renderer.render(scene, camera);
 }
 
@@ -54,23 +62,37 @@ async function loadImageData() {
     })
     .map(line => {
       const fields = line.split(' ');
+      const qua = new THREE.Quaternion(
+        Number(fields[2]),
+        Number(fields[3]),
+        Number(fields[4]),
+        Number(fields[1])
+      );
+      const rotMat = new THREE.Matrix4();
+      rotMat.makeRotationFromQuaternion(qua);
+      rotMat.invert();
+      const tra = new THREE.Vector4(
+        Number(fields[5]),
+        Number(fields[6]),
+        Number(fields[7]),
+        0
+      );
+      const pos = tra.applyMatrix4(rotMat);
+
       return {
-        imageId: Number(fields[0]) - 1,
-        quaternion: new THREE.Quaternion(...fields.slice(1, 4)).normalize(),
-        translation: new THREE.Vector3(...fields.slice(5, 7)),
+        imageId: Number(fields[0]),
+        quaternion: qua,
+        position: new THREE.Vector3(-pos.x, pos.y, pos.z),
       };
     });
   console.log(poses);
 
-  // rotate on X axis to match THREE handedness
-  const adjustment = new THREE.Quaternion();
-  adjustment.setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2);
 
-  poses.forEach(pose => {
-    const axis = new THREE.AxisHelper();
-    axis.position.copy(pose.translation);
-    axis.applyQuaternion(pose.quaternion);
-    axis.quaternion.multiply(adjustment);
+  poses.forEach((pose) => {
+    const axis = new THREE.AxesHelper(0.5);
+    axis.position.copy(pose.position);
+    // axis.position.applyQuaternion(pose.quaternion);
+    // axis.applyQuaternion(pose.quaternion)
     scene.add(axis);
   });
 }
