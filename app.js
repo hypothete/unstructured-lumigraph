@@ -10,14 +10,14 @@ const renderer = new THREE.WebGLRenderer();
 let fragmentShader, vertexShader;
 
 let poses;
-const worldAxis = new THREE.AxesHelper(0.5);
+const worldAxis = new THREE.AxesHelper(5);
 
 renderer.setSize(width, height);
 document.body.appendChild(renderer.domElement);
-camera.position.set(-30, 0, 0);
+camera.position.set(30, 0, 0);
 camera.lookAt(new THREE.Vector3());
 
-scene.add(camera); // , worldAxis);
+scene.add(camera, worldAxis);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -82,7 +82,7 @@ async function loadImageData() {
       return {
         imageId: Number(fields[0]),
         quaternion: qua,
-        position: new THREE.Vector3(-pos.x, pos.y, pos.z),
+        position: new THREE.Vector3(pos.x, pos.y, -pos.z),
       };
     });
   console.log(poses);
@@ -91,8 +91,7 @@ async function loadImageData() {
   poses.forEach((pose) => {
     const axis = new THREE.AxesHelper(0.5);
     axis.position.copy(pose.position);
-    // axis.position.applyQuaternion(pose.quaternion);
-    // axis.applyQuaternion(pose.quaternion)
+    axis.applyQuaternion(pose.quaternion)
     scene.add(axis);
   });
 }
