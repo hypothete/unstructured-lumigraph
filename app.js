@@ -10,11 +10,11 @@ const renderer = new THREE.WebGLRenderer();
 let fragmentShader, vertexShader;
 
 let poses;
-const worldAxis = new THREE.AxesHelper(5);
+const worldAxis = new THREE.AxesHelper(0.1);
 
 renderer.setSize(width, height);
 document.body.appendChild(renderer.domElement);
-camera.position.set(30, 0, 0);
+camera.position.set(0, 0, -10);
 camera.lookAt(new THREE.Vector3());
 
 scene.add(camera, worldAxis);
@@ -93,5 +93,7 @@ async function loadImageData() {
     axis.position.copy(pose.position);
     axis.applyQuaternion(pose.quaternion)
     scene.add(axis);
+    const ah = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 4, 0x0000ff);
+    axis.add(ah);
   });
 }
