@@ -5,6 +5,7 @@
   "author": "Duncan Alexander <hypo@hypothete.com>",
   "license": "MIT",
   "dependencies": {
+    "delaunator": "^5.0.0",
     "three": "^0.128.0"
   },
   "scripts": {

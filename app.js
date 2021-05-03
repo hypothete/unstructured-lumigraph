@@ -1,6 +1,7 @@
 // import * as THREE from './node_modules/three/build/three.module.js';
 import * as THREE from './vendor/three.module.js';
 import { OrbitControls } from './vendor/OrbitControls.js';
+import Delaunator from './vendor/delaunator.js';
 
 const scene = new THREE.Scene();
 let width = window.innerWidth;
@@ -44,6 +45,7 @@ function animate() {
 async function loadScene() {
   await loadImageData();
   await loadShaders();
+  buildImagePlane();
   animate();
 }
 
@@ -85,8 +87,6 @@ async function loadImageData() {
         position: new THREE.Vector3(pos.x, pos.y, -pos.z),
       };
     });
-  console.log(poses);
-
 
   poses.forEach((pose) => {
     const axis = new THREE.AxesHelper(0.5);
@@ -96,4 +96,34 @@ async function loadImageData() {
     const ah = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 4, 0x0000ff);
     axis.add(ah);
   });
+}
+
+function buildImagePlane() {
+  const { aspect, fov } = camera;
+  const height = 2 * Math.tan((Math.PI / 180) * fov * 0.5);
+  const width = height * aspect;
+  const points = [];
+  for(let i=0; i<=10; i++) {
+    for (let j=0; j<=10; j++) {
+      points.push(new THREE.Vector3(
+        (i /10) * width - width/2,
+        (j /10) * height - height/2, 0));
+    }
+  }
+
+
+
+
+  const geometry = new THREE.BufferGeometry().setFromPoints(points);
+  const delaunay = Delaunator.from(points.map(pt => ([pt.x, pt.y])));
+  const meshIndex = [];
+  for(let i=0; i<delaunay.triangles.length; i++) {
+    meshIndex.push(delaunay.triangles[i]);
+  }
+  geometry.setIndex(meshIndex);
+  geometry.computeVertexNormals();
+  const material = new THREE.MeshBasicMaterial({ wireframe: true, color: 0xffff00 });
+  const mesh = new THREE.Mesh(geometry, material);
+  camera.add(mesh);
+  mesh.position.z = -1;
 }
