@@ -10,6 +10,13 @@ const camera = new THREE.PerspectiveCamera(45, width/height, 0.1, 100);
 const renderer = new THREE.WebGLRenderer();
 let fragmentShader, vertexShader;
 
+const planeGeo = new THREE.BufferGeometry();
+const planeMat = new THREE.MeshBasicMaterial({ wireframe: true, color: 0xffff00 });
+let imagePlane;
+const MAX_POINTS = 300;
+const planePositions = new Float32Array(MAX_POINTS * 3);
+const planeIndices = new Float32Array(MAX_POINTS * 3);
+
 let poses;
 const worldAxis = new THREE.AxesHelper(0.1);
 
@@ -24,6 +31,9 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.target = new THREE.Vector3(0,0,0);
 controls.panSpeed = 2;
+controls.addEventListener('change', () => {
+  imagePlane && updateImagePlaneGeo();
+})
 
 window.addEventListener('resize', () => {
   width = window.innerWidth;
@@ -99,6 +109,14 @@ async function loadImageData() {
 }
 
 function buildImagePlane() {
+  planeGeo.setAttribute('position', new THREE.BufferAttribute(planePositions, 3));
+  planeGeo.setAttribute('index', new THREE.BufferAttribute(planeIndices, 3));
+  imagePlane = new THREE.Mesh(planeGeo, planeMat);
+  camera.add(imagePlane);
+  imagePlane.position.z = -1;
+}
+
+function updateImagePlaneGeo() {
   const { aspect, fov } = camera;
   const height = 2 * Math.tan((Math.PI / 180) * fov * 0.5);
   const width = height * aspect;
@@ -111,19 +129,32 @@ function buildImagePlane() {
     }
   }
 
+  poses.forEach(pose => {
+    let posePos = pose.position.clone();
+    posePos.project(camera);
+    posePos.multiply(new THREE.Vector3(width / 2, height / 2, 0));
+    points.push(posePos);
+  });
 
+  let index = 0;
+  for(let i=0; i< points.length; i++) {
+    planeGeo.attributes.position.array[index++] = points[i].x;
+    planeGeo.attributes.position.array[index++] = points[i].y;
+    planeGeo.attributes.position.array[index++] = points[i].z;
+  }
+  planeGeo.attributes.position.needsUpdate = true;
 
-
-  const geometry = new THREE.BufferGeometry().setFromPoints(points);
   const delaunay = Delaunator.from(points.map(pt => ([pt.x, pt.y])));
   const meshIndex = [];
   for(let i=0; i<delaunay.triangles.length; i++) {
     meshIndex.push(delaunay.triangles[i]);
   }
-  geometry.setIndex(meshIndex);
-  geometry.computeVertexNormals();
-  const material = new THREE.MeshBasicMaterial({ wireframe: true, color: 0xffff00 });
-  const mesh = new THREE.Mesh(geometry, material);
-  camera.add(mesh);
-  mesh.position.z = -1;
+
+  index = 0;
+  for(let i=0; i < meshIndex.length; i ++) {
+    planeGeo.attributes.index.array[index++] = meshIndex[i];
+  }
+  planeGeo.attributes.index.needsUpdate = true;
+
+  planeGeo.computeVertexNormals();
 }
