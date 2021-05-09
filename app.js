@@ -13,9 +13,15 @@ let fragmentShader, vertexShader;
 const planeGeo = new THREE.BufferGeometry();
 const planeMat = new THREE.MeshBasicMaterial({ wireframe: true, color: 0xffff00 });
 let imagePlane;
+
 const MAX_POINTS = 300;
 const planePositions = new Float32Array(MAX_POINTS * 3);
-const planeIndices = new Float32Array(MAX_POINTS * 3);
+const positionAttribute = new THREE.BufferAttribute(planePositions, 3);
+positionAttribute.dynamic = true;
+
+const planeIndices = new Uint16Array(MAX_POINTS * 3);
+const indexAttribute = new THREE.BufferAttribute(planeIndices, 3);
+indexAttribute.dynamic = true;
 
 let poses;
 const worldAxis = new THREE.AxesHelper(0.1);
@@ -31,6 +37,7 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.target = new THREE.Vector3(0,0,0);
 controls.panSpeed = 2;
+
 controls.addEventListener('change', () => {
   imagePlane && updateImagePlaneGeo();
 })
@@ -56,6 +63,7 @@ async function loadScene() {
   await loadImageData();
   await loadShaders();
   buildImagePlane();
+  updateImagePlaneGeo();
   animate();
 }
 
@@ -109,8 +117,8 @@ async function loadImageData() {
 }
 
 function buildImagePlane() {
-  planeGeo.setAttribute('position', new THREE.BufferAttribute(planePositions, 3));
-  planeGeo.setAttribute('index', new THREE.BufferAttribute(planeIndices, 3));
+  planeGeo.setAttribute('position', positionAttribute);
+  planeGeo.index = indexAttribute;
   imagePlane = new THREE.Mesh(planeGeo, planeMat);
   camera.add(imagePlane);
   imagePlane.position.z = -1;
@@ -121,11 +129,13 @@ function updateImagePlaneGeo() {
   const height = 2 * Math.tan((Math.PI / 180) * fov * 0.5);
   const width = height * aspect;
   const points = [];
+
   for(let i=0; i<=10; i++) {
     for (let j=0; j<=10; j++) {
-      points.push(new THREE.Vector3(
+      const newPt = new THREE.Vector3(
         (i /10) * width - width/2,
-        (j /10) * height - height/2, 0));
+        (j /10) * height - height/2, 0);
+      points.push(newPt);
     }
   }
 
@@ -136,12 +146,8 @@ function updateImagePlaneGeo() {
     points.push(posePos);
   });
 
-  let index = 0;
-  for(let i=0; i< points.length; i++) {
-    planeGeo.attributes.position.array[index++] = points[i].x;
-    planeGeo.attributes.position.array[index++] = points[i].y;
-    planeGeo.attributes.position.array[index++] = points[i].z;
-  }
+  planePositions.fill(0);
+  planePositions.set(points.reduce((acc, pt) => ([...acc, pt.x, pt.y, pt.z]), []), 0);
   planeGeo.attributes.position.needsUpdate = true;
 
   const delaunay = Delaunator.from(points.map(pt => ([pt.x, pt.y])));
@@ -150,11 +156,9 @@ function updateImagePlaneGeo() {
     meshIndex.push(delaunay.triangles[i]);
   }
 
-  index = 0;
-  for(let i=0; i < meshIndex.length; i ++) {
-    planeGeo.attributes.index.array[index++] = meshIndex[i];
-  }
-  planeGeo.attributes.index.needsUpdate = true;
+  planeIndices.fill(0);
+  planeIndices.set(meshIndex, 0);
+  planeGeo.index.needsUpdate = true;
 
   planeGeo.computeVertexNormals();
 }
