@@ -10,10 +10,6 @@ const camera = new THREE.PerspectiveCamera(45, width/height, 0.1, 100);
 const renderer = new THREE.WebGLRenderer();
 
 const planeGeo = new THREE.BufferGeometry();
-const planeMat = new THREE.MeshBasicMaterial({
-  wireframe: true,
-  color: 0xffff00
-});
 let imagePlane;
 
 const MAX_POINTS = 300;
