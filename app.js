@@ -8,10 +8,12 @@ let width = window.innerWidth;
 let height = window.innerHeight;
 const camera = new THREE.PerspectiveCamera(45, width/height, 0.1, 100);
 const renderer = new THREE.WebGLRenderer();
-let fragmentShader, vertexShader;
 
 const planeGeo = new THREE.BufferGeometry();
-const planeMat = new THREE.MeshBasicMaterial({ wireframe: true, color: 0xffff00 });
+const planeMat = new THREE.MeshBasicMaterial({
+  wireframe: true,
+  color: 0xffff00
+});
 let imagePlane;
 
 const MAX_POINTS = 300;
@@ -19,9 +21,12 @@ const planePositions = new Float32Array(MAX_POINTS * 3);
 const positionAttribute = new THREE.BufferAttribute(planePositions, 3);
 positionAttribute.dynamic = true;
 
-const planeIndices = new Uint16Array(MAX_POINTS * 3);
+const planeIndices = new Uint32Array(MAX_POINTS * 3);
 const indexAttribute = new THREE.BufferAttribute(planeIndices, 3);
 indexAttribute.dynamic = true;
+
+let fragmentShader, vertexShader;
+let blendMat;
 
 let poses;
 const worldAxis = new THREE.AxesHelper(0.1);
@@ -119,7 +124,16 @@ async function loadImageData() {
 function buildImagePlane() {
   planeGeo.setAttribute('position', positionAttribute);
   planeGeo.index = indexAttribute;
-  imagePlane = new THREE.Mesh(planeGeo, planeMat);
+
+  blendMat = new THREE.ShaderMaterial({
+    fragmentShader,
+    vertexShader,
+    wireframe: true
+  });
+
+  blendMat.side = THREE.BackSide;
+
+  imagePlane = new THREE.Mesh(planeGeo, blendMat);
   camera.add(imagePlane);
   imagePlane.position.z = -1;
 }
@@ -130,11 +144,13 @@ function updateImagePlaneGeo() {
   const width = height * aspect;
   const points = [];
 
-  for(let i=0; i<=10; i++) {
-    for (let j=0; j<=10; j++) {
+  const gridSize = 5;
+
+  for(let i=0; i<=gridSize; i++) {
+    for (let j=0; j<=gridSize; j++) {
       const newPt = new THREE.Vector3(
-        (i /10) * width - width/2,
-        (j /10) * height - height/2, 0);
+        (i / gridSize) * width - width/2,
+        (j / gridSize) * height - height/2, 0);
       points.push(newPt);
     }
   }
