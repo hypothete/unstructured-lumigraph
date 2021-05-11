@@ -12,12 +12,15 @@ const renderer = new THREE.WebGLRenderer();
 const planeGeo = new THREE.BufferGeometry();
 let imagePlane;
 
-const MAX_POINTS = 300;
-const planePositions = new Float32Array(MAX_POINTS * 3);
+const MAX_POINTS = 1800;
+const gridSize = 7;
+const planeIsWireframe = false;
+const planeZ = -1;
+const planePositions = new Float32Array(MAX_POINTS);
 const positionAttribute = new THREE.BufferAttribute(planePositions, 3);
 positionAttribute.dynamic = true;
 
-const planeIndices = new Uint32Array(MAX_POINTS * 3);
+const planeIndices = new Uint32Array(MAX_POINTS);
 const indexAttribute = new THREE.BufferAttribute(planeIndices, 3);
 indexAttribute.dynamic = true;
 
@@ -124,14 +127,14 @@ function buildImagePlane() {
   blendMat = new THREE.ShaderMaterial({
     fragmentShader,
     vertexShader,
-    wireframe: true
+    wireframe: planeIsWireframe
   });
 
   blendMat.side = THREE.BackSide;
 
   imagePlane = new THREE.Mesh(planeGeo, blendMat);
   camera.add(imagePlane);
-  imagePlane.position.z = -1;
+  imagePlane.position.z = planeZ;
 }
 
 function updateImagePlaneGeo() {
@@ -139,8 +142,6 @@ function updateImagePlaneGeo() {
   const height = 2 * Math.tan((Math.PI / 180) * fov * 0.5);
   const width = height * aspect;
   const points = [];
-
-  const gridSize = 5;
 
   for(let i=0; i<=gridSize; i++) {
     for (let j=0; j<=gridSize; j++) {
