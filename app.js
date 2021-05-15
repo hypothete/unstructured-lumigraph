@@ -6,7 +6,7 @@ import Delaunator from './vendor/delaunator.js';
 const scene = new THREE.Scene();
 let width = window.innerWidth;
 let height = window.innerHeight;
-const camera = new THREE.PerspectiveCamera(45, width/height, 0.1, 100);
+const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
 const renderer = new THREE.WebGLRenderer();
 
 const planeGeo = new THREE.BufferGeometry();
@@ -18,11 +18,11 @@ const planeIsWireframe = false;
 const planeZ = -1;
 const planePositions = new Float32Array(MAX_POINTS);
 const positionAttribute = new THREE.BufferAttribute(planePositions, 3);
-positionAttribute.dynamic = true;
+positionAttribute.usage = THREE.DynamicDrawUsage;
 
 const planeIndices = new Uint32Array(MAX_POINTS);
 const indexAttribute = new THREE.BufferAttribute(planeIndices, 3);
-indexAttribute.dynamic = true;
+indexAttribute.usage = THREE.DynamicDrawUsage;
 
 let fragmentShader, vertexShader;
 let blendMat;
@@ -39,17 +39,17 @@ scene.add(camera, worldAxis);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.target = new THREE.Vector3(0,0,0);
+controls.target = new THREE.Vector3(0, 0, 0);
 controls.panSpeed = 2;
 
 controls.addEventListener('change', () => {
   imagePlane && updateImagePlaneGeo();
-})
+});
 
 window.addEventListener('resize', () => {
   width = window.innerWidth;
   height = window.innerHeight;
-  camera.aspect = width/height;
+  camera.aspect = width / height;
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
   renderer.render(scene, camera);
@@ -58,9 +58,9 @@ window.addEventListener('resize', () => {
 loadScene();
 
 function animate() {
-	requestAnimationFrame(animate);
+  requestAnimationFrame(animate);
   controls.update();
-	renderer.render(scene, camera);
+  renderer.render(scene, camera);
 }
 
 async function loadScene() {
@@ -72,19 +72,19 @@ async function loadScene() {
 }
 
 async function loadShaders() {
-  vertexShader = await fetch('./vertex.glsl').then(res => res.text());
-  fragmentShader = await fetch('./fragment.glsl').then(res => res.text());
+  vertexShader = await fetch('./vertex.glsl').then((res) => res.text());
+  fragmentShader = await fetch('./fragment.glsl').then((res) => res.text());
   console.log('Loaded shaders');
 }
 
 async function loadImageData() {
-  const rawText = await fetch('./data/images.txt').then(res => res.text());
+  const rawText = await fetch('./data/images.txt').then((res) => res.text());
   poses = rawText
     .split(`\r\n`)
-    .filter(line => {
+    .filter((line) => {
       return line.endsWith('jpg');
     })
-    .map(line => {
+    .map((line) => {
       const fields = line.split(' ');
       const qua = new THREE.Quaternion(
         Number(fields[2]),
@@ -113,9 +113,14 @@ async function loadImageData() {
   poses.forEach((pose) => {
     const axis = new THREE.AxesHelper(0.5);
     axis.position.copy(pose.position);
-    axis.applyQuaternion(pose.quaternion)
+    axis.applyQuaternion(pose.quaternion);
     scene.add(axis);
-    const ah = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), 4, 0x0000ff);
+    const ah = new THREE.ArrowHelper(
+      new THREE.Vector3(0, 0, 1),
+      new THREE.Vector3(),
+      4,
+      0x0000ff
+    );
     axis.add(ah);
   });
 }
@@ -124,10 +129,21 @@ function buildImagePlane() {
   planeGeo.setAttribute('position', positionAttribute);
   planeGeo.index = indexAttribute;
 
+  const cameraStructs = poses.map((pose) => ({
+    position: new THREE.Vector3(0, 0, 0),
+    color: new THREE.Vector3(Math.random(), Math.random(), Math.random()),
+  }));
+
   blendMat = new THREE.ShaderMaterial({
     fragmentShader,
     vertexShader,
-    wireframe: planeIsWireframe
+    transparent: true,
+    wireframe: planeIsWireframe,
+    uniforms: {
+      cameras: {
+        value: cameraStructs,
+      },
+    },
   });
 
   blendMat.side = THREE.BackSide;
@@ -143,29 +159,36 @@ function updateImagePlaneGeo() {
   const width = height * aspect;
   const points = [];
 
-  for(let i=0; i<=gridSize; i++) {
-    for (let j=0; j<=gridSize; j++) {
+  for (let i = 0; i <= gridSize; i++) {
+    for (let j = 0; j <= gridSize; j++) {
       const newPt = new THREE.Vector3(
-        (i / gridSize) * width - width/2,
-        (j / gridSize) * height - height/2, 0);
+        (i / gridSize) * width - width / 2,
+        (j / gridSize) * height - height / 2,
+        0
+      );
       points.push(newPt);
     }
   }
 
-  poses.forEach(pose => {
+  poses.forEach((pose, poseIndex) => {
     let posePos = pose.position.clone();
     posePos.project(camera);
     posePos.multiply(new THREE.Vector3(width / 2, height / 2, 0));
     points.push(posePos);
+    // update existing cameraStructs - assumes pose order has not changed
+    blendMat.uniforms.cameras.value[poseIndex].position = posePos;
   });
 
   planePositions.fill(0);
-  planePositions.set(points.reduce((acc, pt) => ([...acc, pt.x, pt.y, pt.z]), []), 0);
+  planePositions.set(
+    points.reduce((acc, pt) => [...acc, pt.x, pt.y, pt.z], []),
+    0
+  );
   planeGeo.attributes.position.needsUpdate = true;
 
-  const delaunay = Delaunator.from(points.map(pt => ([pt.x, pt.y])));
+  const delaunay = Delaunator.from(points.map((pt) => [pt.x, pt.y]));
   const meshIndex = [];
-  for(let i=0; i<delaunay.triangles.length; i++) {
+  for (let i = 0; i < delaunay.triangles.length; i++) {
     meshIndex.push(delaunay.triangles[i]);
   }
 
