@@ -12,7 +12,7 @@ const renderer = new THREE.WebGLRenderer();
 const planeGeo = new THREE.BufferGeometry();
 let imagePlane;
 
-const MAX_POINTS = 1800;
+const MAX_POINTS = 5000;
 const gridSize = 7;
 const planeIsWireframe = false;
 const planeZ = -1;
@@ -23,6 +23,15 @@ positionAttribute.usage = THREE.DynamicDrawUsage;
 const planeIndices = new Uint32Array(MAX_POINTS);
 const indexAttribute = new THREE.BufferAttribute(planeIndices, 3);
 indexAttribute.usage = THREE.DynamicDrawUsage;
+
+const proxyGeo = new THREE.PlaneGeometry(21, 21, 11, 11);
+const proxyMat = new THREE.MeshBasicMaterial({
+  color: 0x00ff00,
+  wireframe: true,
+});
+const proxy = new THREE.Mesh(proxyGeo, proxyMat);
+const proxyVertices = []; // used for projecting the vertices of the geometry
+// assume no dynamic vertices for now
 
 let fragmentShader, vertexShader;
 let blendMat;
@@ -35,7 +44,8 @@ document.body.appendChild(renderer.domElement);
 camera.position.set(0, 0, -10);
 camera.lookAt(new THREE.Vector3());
 
-scene.add(camera, worldAxis);
+scene.add(camera, worldAxis, proxy);
+proxy.position.z = 10;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -158,6 +168,7 @@ function updateImagePlaneGeo() {
   const height = 2 * Math.tan((Math.PI / 180) * fov * 0.5);
   const width = height * aspect;
   const points = [];
+  const imagePlaneScale = new THREE.Vector3(width / 2, height / 2, 0);
 
   for (let i = 0; i <= gridSize; i++) {
     for (let j = 0; j <= gridSize; j++) {
@@ -173,10 +184,33 @@ function updateImagePlaneGeo() {
   poses.forEach((pose, poseIndex) => {
     let posePos = pose.position.clone();
     posePos.project(camera);
-    posePos.multiply(new THREE.Vector3(width / 2, height / 2, 0));
+    posePos.multiply(imagePlaneScale);
     points.push(posePos);
     // update existing cameraStructs - assumes pose order has not changed
     blendMat.uniforms.cameras.value[poseIndex].position = posePos;
+  });
+
+  // project proxy to plane
+  if (!proxyVertices.length) {
+    const proxyPositions = proxyGeo.getAttribute('position');
+    for (
+      let i = 0;
+      i < proxyPositions.array.length;
+      i += proxyPositions.itemSize
+    ) {
+      const proxyVertex = new THREE.Vector3(
+        ...proxyPositions.array.slice(i, i + proxyPositions.itemSize)
+      );
+      proxyVertices.push(proxyVertex);
+    }
+  }
+
+  proxyVertices.forEach((proxyVertex) => {
+    let vertex = proxyVertex.clone();
+    vertex.applyMatrix4(proxy.matrixWorld);
+    vertex.project(camera);
+    vertex.multiply(imagePlaneScale);
+    points.push(vertex);
   });
 
   planePositions.fill(0);
