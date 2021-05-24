@@ -3,13 +3,15 @@ precision highp int;
 
 #define CAMERA_COUNT 13
 #define CLOSEST_K 4
+#define RES_WEIGHT 0.2
 
 struct Camera {
   vec3 position;
-  vec3 zDirection;
+  // vec3 zDirection;
   vec3 color;
-  float aspect;
-  float fov;
+  // float aspect;
+  // float fov;
+  mat4 matrix;
 };
 
 uniform Camera cameras[CAMERA_COUNT];
@@ -35,8 +37,7 @@ float resDiff(Camera c) {
 }
 
 float angResDiff(Camera c) {
-  float resWeight = 0.2; // TODO experiment with
-  return (1.0 - resWeight) * angDiff(c) + resWeight * resDiff(c);
+  return (1.0 - RES_WEIGHT) * angDiff(c) + RES_WEIGHT * resDiff(c);
 }
 
 float angResBlend(Camera c, float angResThresh) {
@@ -45,6 +46,11 @@ float angResBlend(Camera c, float angResThresh) {
 
 float fovBlend(Camera c) {
   // TODO - should drop off as we approach edge of image
+  vec4 worldPos = modelMatrix * vec4(position, 1.0);
+  vec4 camView = c.matrix * worldPos;
+  if (abs(camView.x) > 1.0 || abs(camView.y) > 1.0 || abs(camView.z) > 1.0) {
+    return 0.0;
+  }
   return 1.0;
 }
 

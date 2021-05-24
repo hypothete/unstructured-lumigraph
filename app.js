@@ -183,10 +183,12 @@ async function loadImageData() {
         resY = fields[3];
       }
       // vertical fov
-      poses[camIndex].fov = 2 * Math.atan(fields[3] / (2 * fields[4]));
-      poses[camIndex].aspect = Number(fields[2] / fields[1]);
+      poses[camIndex].fov =
+        (180 * 2 * Math.atan(fields[3] / (2 * fields[4]))) / Math.PI;
+      poses[camIndex].aspect = Number(fields[2] / fields[3]);
     });
 
+  // set up helpers in the scene for the cameras
   poses.forEach((pose) => {
     const axis = new THREE.AxesHelper(0.5);
     axis.position.copy(pose.position);
@@ -194,7 +196,56 @@ async function loadImageData() {
     scene.add(axis);
   });
 
-  console.log('Loaded image data');
+  // get mvpMatrix for each camera
+  poses.forEach((pose) => {
+    const tempCamera = new THREE.PerspectiveCamera(
+      pose.fov,
+      pose.aspect,
+      0.01,
+      100
+    );
+    tempCamera.position.copy(pose.position);
+    tempCamera.matrix.setRotationFromQuaternion(pose.quaternion);
+    tempCamera.updateMatrixWorld(true);
+    pose.mvpMatrix = new THREE.Matrix4();
+    pose.mvpMatrix.multiplyMatrices(
+      tempCamera.projectionMatrix,
+      tempCamera.matrixWorldInverse
+    );
+  });
+
+  console.log('Loaded image and camera data');
+}
+
+function makeProxy() {
+  const cameraStructs = poses.map((pose, poseIndex) => ({
+    position: pose.position,
+    // zDirection: new THREE.Vector3(0, 0, 1)
+    //   .applyQuaternion(pose.quaternion)
+    //   .normalize(),
+    color: new THREE.Vector3(...getColor(poseIndex)),
+    // aspect: pose.aspect,
+    // fov: pose.fov,
+    matrix: pose.mvpMatrix,
+  }));
+
+  console.log(cameraStructs);
+
+  proxyMat = new THREE.ShaderMaterial({
+    fragmentShader,
+    vertexShader,
+    uniforms: {
+      cameras: {
+        value: cameraStructs,
+      },
+      images: { value: imageTexture },
+    },
+  });
+
+  proxy = new THREE.Mesh(proxyGeo, proxyMat);
+  scene.add(proxy);
+  proxy.scale.y = -1;
+  proxy.scale.x = -1;
 }
 
 function imgToRGBABuffer(img, w, h) {
@@ -231,34 +282,4 @@ async function loadImageTexture() {
     poses.length
   );
   console.log('Loaded images into texture');
-}
-
-function makeProxy() {
-  const cameraStructs = poses.map((pose, poseIndex) => ({
-    position: pose.position,
-    zDirection: new THREE.Vector3(0, 0, 1)
-      .applyQuaternion(pose.quaternion)
-      .normalize(),
-    color: new THREE.Vector3(...getColor(poseIndex)),
-    aspect: pose.aspect,
-    fov: pose.fov,
-  }));
-
-  console.log(cameraStructs);
-
-  proxyMat = new THREE.ShaderMaterial({
-    fragmentShader,
-    vertexShader,
-    uniforms: {
-      cameras: {
-        value: cameraStructs,
-      },
-      images: { value: imageTexture },
-    },
-  });
-
-  proxy = new THREE.Mesh(proxyGeo, proxyMat);
-  scene.add(proxy);
-  proxy.scale.y = -1;
-  proxy.scale.x = -1;
 }

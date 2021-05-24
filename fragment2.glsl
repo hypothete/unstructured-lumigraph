@@ -7,10 +7,11 @@ precision highp sampler2DArray;
 
 struct Camera {
   vec3 position;
-  vec3 zDirection;
+  // vec3 zDirection;
   vec3 color;
-  float aspect;
-  float fov;
+  // float aspect;
+  // float fov;
+  mat4 matrix;
 };
 
 uniform Camera cameras[CAMERA_COUNT];
