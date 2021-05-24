@@ -34,12 +34,13 @@ float resDiff(Camera c) {
   return max(0.0, length(worldPos.xyz - c.position) - length(worldPos.xyz - cameraPosition));
 }
 
-float angResDiff(Camera c, float resWeight) {
+float angResDiff(Camera c) {
+  float resWeight = 0.2; // TODO experiment with
   return (1.0 - resWeight) * angDiff(c) + resWeight * resDiff(c);
 }
 
-float angResBlend(Camera c, float resWeight, float angResThresh) {
-  return max(0.0, 1.0 - (angResDiff(c, resWeight) / angResThresh));
+float angResBlend(Camera c, float angResThresh) {
+  return max(0.0, 1.0 - (angResDiff(c) / angResThresh));
 }
 
 float fovBlend(Camera c) {
@@ -47,8 +48,8 @@ float fovBlend(Camera c) {
   return 1.0;
 }
 
-float angResFovBlend(Camera c, float resWeight, float angResThresh) {
-  return angResBlend(c, resWeight, angResThresh) * fovBlend(c);
+float angResFovBlend(Camera c, float angResThresh) {
+  return angResBlend(c, angResThresh) * fovBlend(c);
 }
 
 
@@ -107,59 +108,63 @@ void main() {
   float nrmAngBlends[CAMERA_COUNT];
   for(int i = 0; i < CAMERA_COUNT; i++) {
     nrmAngBlends[i] = angBlends[i] / sumKAngBlends;
-    cameraWeights[i] = nrmAngBlends[i];
+    // cameraWeights[i] = nrmAngBlends[i];
   }
 
 
-  // // calculate resDiffs
-  // float resDiffs[CAMERA_COUNT];
-  // float sortedResDiffs[CAMERA_COUNT];
-  // for(int i = 0; i < CAMERA_COUNT; i++) {
-  //   resDiffs[i] = resDiff(cameras[i]);
-  //   sortedResDiffs[i] = resDiffs[i];
-  // }
+  // calculate resDiffs
+  float resDiffs[CAMERA_COUNT];
+  float sortedResDiffs[CAMERA_COUNT];
+  for(int i = 0; i < CAMERA_COUNT; i++) {
+    resDiffs[i] = resDiff(cameras[i]);
+    sortedResDiffs[i] = resDiffs[i];
+  }
 
-  // // sort sortedResDiffs
-  // t = 0.0;
-  // for (int i = 0; i < CAMERA_COUNT-1; ++i) {
-  //   for (int j = i+1; j < CAMERA_COUNT; ++j) {
-  //     if (sortedResDiffs[j] < sortedResDiffs[i]) {
-  //       t = sortedResDiffs[i];
-  //       sortedResDiffs[i] = sortedResDiffs[j];
-  //       sortedResDiffs[j] = t;
-  //     }
-  //   }
-  // }
+  // sort sortedResDiffs
+  t = 0.0;
+  for (int i = 0; i < CAMERA_COUNT-1; ++i) {
+    for (int j = i+1; j < CAMERA_COUNT; ++j) {
+      if (sortedResDiffs[j] < sortedResDiffs[i]) {
+        t = sortedResDiffs[i];
+        sortedResDiffs[i] = sortedResDiffs[j];
+        sortedResDiffs[j] = t;
+      }
+    }
+  }
 
-  // // again threshold by the kth highest value
-  // float angResThresh = sortedResDiffs[CAMERA_COUNT - CLOSEST_K];
-  // float resWeight = 0.5; // TODO tinker with
+  // again threshold by the kth highest value
+  // TODO: problematic when behind cameras?
+  float angResThresh = sortedResDiffs[CAMERA_COUNT - CLOSEST_K];
 
-  // float angResFovBlends[CAMERA_COUNT];
-  // float sortedAngResFovBlends[CAMERA_COUNT];
-  // for(int i = 0; i < CAMERA_COUNT; i++) {
-  //   angResFovBlends[i] = angResFovBlend(cameras[i], resWeight, angResThresh);
-  // }
+  float angResFovBlends[CAMERA_COUNT];
+  float sortedAngResFovBlends[CAMERA_COUNT];
+  for(int i = 0; i < CAMERA_COUNT; i++) {
+    angResFovBlends[i] = angResFovBlend(cameras[i], angResThresh);
+    sortedAngResFovBlends[i] = angResFovBlends[i];
+  }
 
-  // t = 0.0;
-  // for (int i = 0; i < CAMERA_COUNT-1; ++i) {
-  //   for (int j = i+1; j < CAMERA_COUNT; ++j) {
-  //     if (sortedAngResFovBlends[j] < sortedAngResFovBlends[i]) {
-  //       t = sortedAngResFovBlends[i];
-  //       sortedAngResFovBlends[i] = sortedAngResFovBlends[j];
-  //       sortedAngResFovBlends[j] = t;
-  //     }
-  //   }
-  // }
+  // sort angResFovBlends
+  t = 0.0;
+  for (int i = 0; i < CAMERA_COUNT-1; ++i) {
+    for (int j = i+1; j < CAMERA_COUNT; ++j) {
+      if (sortedAngResFovBlends[j] < sortedAngResFovBlends[i]) {
+        t = sortedAngResFovBlends[i];
+        sortedAngResFovBlends[i] = sortedAngResFovBlends[j];
+        sortedAngResFovBlends[j] = t;
+      }
+    }
+  }
 
-  // float sumKAngResFovBlends;
-  // for(int i = CAMERA_COUNT - CLOSEST_K; i < CAMERA_COUNT; i++) {
-  //   sumKAngResFovBlends += sortedAngResFovBlends[i];
-  // }
+  // sum highest k angResFovBlend weights
+  float sumKAngResFovBlends;
+  for(int i = CAMERA_COUNT - CLOSEST_K; i < CAMERA_COUNT; i++) {
+    sumKAngResFovBlends += sortedAngResFovBlends[i];
+  }
 
-  // for(int i = 0; i < CAMERA_COUNT; i++) {
-  //   cameraWeights[i] = angResFovBlends[i] / sumKAngResFovBlends;
-  // }
+  // set final camera weights
+  for(int i = 0; i < CAMERA_COUNT; i++) {
+    cameraWeights[i] = angResFovBlends[i] / sumKAngResFovBlends;
+  }
   
   gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 }

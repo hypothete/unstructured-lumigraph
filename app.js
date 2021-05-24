@@ -8,9 +8,8 @@ let width = window.innerWidth;
 let height = window.innerHeight;
 const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer();
-
+let mousedown = false;
 let proxyGeo, proxyMat, proxy;
-
 let fragmentShader, vertexShader;
 let resX, resY;
 const filenames = [];
@@ -19,8 +18,8 @@ let poses;
 
 renderer.setSize(width, height);
 document.body.appendChild(renderer.domElement);
-camera.position.set(0, 0, -10);
-camera.lookAt(new THREE.Vector3());
+camera.position.set(0, 0, 5);
+camera.lookAt(new THREE.Vector3(0, 0, 1000));
 scene.add(camera);
 
 // const controls = new OrbitControls(camera, renderer.domElement);
@@ -38,28 +37,43 @@ window.addEventListener('resize', () => {
   renderer.render(scene, camera);
 });
 
-window.addEventListener('keypress', (e) => {
-  switch (e.key) {
-    case 'a':
-      camera.position.x += 0.1;
-      break;
-    case 'd':
-      camera.position.x -= 0.1;
-      break;
-    case 'w':
-      camera.position.z += 0.1;
-      break;
-    case 's':
-      camera.position.z -= 0.1;
-      break;
-    case 'q':
-      camera.position.y += 0.1;
-      break;
-    case 'z':
-      camera.position.y -= 0.1;
-      break;
-    default:
-  }
+// window.addEventListener('keydown', (e) => {
+//   switch (e.key) {
+//     case 'a':
+//       camera.position.x += 0.1;
+//       break;
+//     case 'd':
+//       camera.position.x -= 0.1;
+//       break;
+//     case 'w':
+//       camera.position.y += 0.1;
+//       break;
+//     case 's':
+//       camera.position.y -= 0.1;
+//       break;
+//     case 'q':
+//       camera.position.z += 0.1;
+//       break;
+//     case 'z':
+//       camera.position.z -= 0.1;
+//       break;
+//     default:
+//   }
+// });
+
+renderer.domElement.addEventListener('mousedown', () => {
+  mousedown = true;
+});
+
+renderer.domElement.addEventListener('mouseup', () => {
+  mousedown = false;
+});
+
+renderer.domElement.addEventListener('mousemove', (e) => {
+  e.preventDefault();
+  if (!mousedown) return;
+  camera.position.x += e.movementX / 100;
+  camera.position.y += e.movementY / 100;
 });
 
 loadScene();
