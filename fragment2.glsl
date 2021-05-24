@@ -3,14 +3,10 @@ precision highp int;
 precision highp sampler2DArray;
 
 #define CAMERA_COUNT 13
-#define CLOSEST_K 4
 
 struct Camera {
   vec3 position;
-  // vec3 zDirection;
   vec3 color;
-  // float aspect;
-  // float fov;
   mat4 matrix;
 };
 

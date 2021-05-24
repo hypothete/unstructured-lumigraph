@@ -18,7 +18,7 @@ let poses;
 
 renderer.setSize(width, height);
 document.body.appendChild(renderer.domElement);
-camera.position.set(0, 0, 5);
+camera.position.set(0, 0, 4);
 camera.lookAt(new THREE.Vector3(0, 0, 1000));
 scene.add(camera);
 
@@ -40,16 +40,16 @@ window.addEventListener('resize', () => {
 window.addEventListener('keydown', (e) => {
   switch (e.key) {
     case 'a':
-      camera.position.x += 0.1;
+      camera.position.x += 0.2;
       break;
     case 'd':
-      camera.position.x -= 0.1;
+      camera.position.x -= 0.2;
       break;
     case 'w':
-      camera.position.y += 0.1;
+      camera.position.y += 0.2;
       break;
     case 's':
-      camera.position.y -= 0.1;
+      camera.position.y -= 0.2;
       break;
     case 'q':
       camera.position.z += 0.5;
@@ -210,10 +210,10 @@ async function loadImageData() {
 
     // set up helpers in the scene for the cameras
 
-    // const axis = new THREE.AxesHelper(0.5);
-    // axis.position.copy(pose.position);
-    // axis.applyQuaternion(pose.quaternion);
-    // scene.add(axis);
+    const axis = new THREE.AxesHelper(0.5);
+    axis.position.copy(pose.position);
+    axis.applyQuaternion(pose.quaternion);
+    scene.add(axis);
 
     // const helper = new THREE.CameraHelper(tempCamera);
     // scene.add(helper);

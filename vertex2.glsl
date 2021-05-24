@@ -3,14 +3,11 @@ precision highp int;
 
 #define CAMERA_COUNT 13
 #define CLOSEST_K 4
-#define RES_WEIGHT 0.2
+#define RES_WEIGHT 0.5
 
 struct Camera {
   vec3 position;
-  // vec3 zDirection;
   vec3 color;
-  // float aspect;
-  // float fov;
   mat4 matrix;
 };
 
@@ -45,7 +42,7 @@ float angResBlend(Camera c, float angResThresh) {
 }
 
 float fovBlend(Camera c) {
-  // TODO - should drop off as we approach edge of image
+  // TODO: feathering
   vec4 worldPos = modelMatrix * vec4(position, 1.0);
   vec4 camView = c.matrix * worldPos;
   if (abs(camView.x/camView.w) > 1.0 || abs(camView.y/camView.w) > 1.0 || abs(camView.z/camView.w) > 1.0) {
