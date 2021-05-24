@@ -48,7 +48,7 @@ float fovBlend(Camera c) {
   // TODO - should drop off as we approach edge of image
   vec4 worldPos = modelMatrix * vec4(position, 1.0);
   vec4 camView = c.matrix * worldPos;
-  if (abs(camView.x) > 1.0 || abs(camView.y) > 1.0 || abs(camView.z) > 1.0) {
+  if (abs(camView.x/camView.w) > 1.0 || abs(camView.y/camView.w) > 1.0 || abs(camView.z/camView.w) > 1.0) {
     return 0.0;
   }
   return 1.0;

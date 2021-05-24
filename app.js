@@ -37,29 +37,29 @@ window.addEventListener('resize', () => {
   renderer.render(scene, camera);
 });
 
-// window.addEventListener('keydown', (e) => {
-//   switch (e.key) {
-//     case 'a':
-//       camera.position.x += 0.1;
-//       break;
-//     case 'd':
-//       camera.position.x -= 0.1;
-//       break;
-//     case 'w':
-//       camera.position.y += 0.1;
-//       break;
-//     case 's':
-//       camera.position.y -= 0.1;
-//       break;
-//     case 'q':
-//       camera.position.z += 0.1;
-//       break;
-//     case 'z':
-//       camera.position.z -= 0.1;
-//       break;
-//     default:
-//   }
-// });
+window.addEventListener('keydown', (e) => {
+  switch (e.key) {
+    case 'a':
+      camera.position.x += 0.1;
+      break;
+    case 'd':
+      camera.position.x -= 0.1;
+      break;
+    case 'w':
+      camera.position.y += 0.1;
+      break;
+    case 's':
+      camera.position.y -= 0.1;
+      break;
+    case 'q':
+      camera.position.z += 0.5;
+      break;
+    case 'z':
+      camera.position.z -= 0.5;
+      break;
+    default:
+  }
+});
 
 renderer.domElement.addEventListener('mousedown', () => {
   mousedown = true;
@@ -188,14 +188,6 @@ async function loadImageData() {
       poses[camIndex].aspect = Number(fields[2] / fields[3]);
     });
 
-  // set up helpers in the scene for the cameras
-  poses.forEach((pose) => {
-    const axis = new THREE.AxesHelper(0.5);
-    axis.position.copy(pose.position);
-    axis.applyQuaternion(pose.quaternion);
-    scene.add(axis);
-  });
-
   // get mvpMatrix for each camera
   poses.forEach((pose) => {
     const tempCamera = new THREE.PerspectiveCamera(
@@ -205,13 +197,26 @@ async function loadImageData() {
       100
     );
     tempCamera.position.copy(pose.position);
-    tempCamera.matrix.setRotationFromQuaternion(pose.quaternion);
+    tempCamera.applyQuaternion(pose.quaternion);
+    tempCamera.updateMatrixWorld(true);
+    tempCamera.rotation.y += Math.PI;
+
     tempCamera.updateMatrixWorld(true);
     pose.mvpMatrix = new THREE.Matrix4();
     pose.mvpMatrix.multiplyMatrices(
       tempCamera.projectionMatrix,
       tempCamera.matrixWorldInverse
     );
+
+    // set up helpers in the scene for the cameras
+
+    // const axis = new THREE.AxesHelper(0.5);
+    // axis.position.copy(pose.position);
+    // axis.applyQuaternion(pose.quaternion);
+    // scene.add(axis);
+
+    // const helper = new THREE.CameraHelper(tempCamera);
+    // scene.add(helper);
   });
 
   console.log('Loaded image and camera data');
@@ -220,16 +225,9 @@ async function loadImageData() {
 function makeProxy() {
   const cameraStructs = poses.map((pose, poseIndex) => ({
     position: pose.position,
-    // zDirection: new THREE.Vector3(0, 0, 1)
-    //   .applyQuaternion(pose.quaternion)
-    //   .normalize(),
     color: new THREE.Vector3(...getColor(poseIndex)),
-    // aspect: pose.aspect,
-    // fov: pose.fov,
     matrix: pose.mvpMatrix,
   }));
-
-  console.log(cameraStructs);
 
   proxyMat = new THREE.ShaderMaterial({
     fragmentShader,
