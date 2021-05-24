@@ -1,32 +1,31 @@
 precision highp float;
 precision highp int;
+precision highp sampler2DArray;
 
 #define CAMERA_COUNT 13
+#define CLOSEST_K 4
 
 struct Camera {
   vec3 position;
+  vec3 zDirection;
   vec3 color;
+  float aspect;
+  float fov;
 };
 
 uniform Camera cameras[CAMERA_COUNT];
+uniform sampler2DArray images;
+
+in float cameraWeights[CAMERA_COUNT];
 
 void main() {
 
   vec3 color = vec3(0.0, 0.0, 0.0);
 
-  float shortestLength = 1000.0;
-  Camera nearestCamera;
-
   for(int i = 0; i < CAMERA_COUNT; i++) {
     Camera c = cameras[i];
-    float distToCamera = length(c.position - vPos);
-    if (distToCamera < shortestLength) {
-      shortestLength = distToCamera;
-      nearestCamera = c;
-    }
+    color += cameraWeights[i] * c.color;
   }
 
-  color = nearestCamera.color;
-
-  gl_FragColor = vec4(color, 0.5);
+  gl_FragColor = vec4(color, 1.0);
 }
