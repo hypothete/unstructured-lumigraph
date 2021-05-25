@@ -15,6 +15,8 @@ let resX, resY;
 const filenames = [];
 let imageTexture;
 let poses;
+let showCameraHelpers = false;
+const cameraHelpers = [];
 
 renderer.setSize(width, height);
 document.body.appendChild(renderer.domElement);
@@ -56,6 +58,12 @@ window.addEventListener('keydown', (e) => {
     case 'z':
       camera.position.z -= 0.5;
       break;
+    case 'c':
+      showCameraHelpers = !showCameraHelpers;
+      cameraHelpers.forEach((helper) => {
+        helper.visible = showCameraHelpers;
+      });
+      break;
     default:
   }
 });
@@ -71,8 +79,8 @@ renderer.domElement.addEventListener('mouseup', () => {
 renderer.domElement.addEventListener('mousemove', (e) => {
   e.preventDefault();
   if (!mousedown) return;
-  camera.position.x += e.movementX / 100;
-  camera.position.y += e.movementY / 100;
+  camera.rotation.y += e.movementX / 100;
+  camera.rotation.x += e.movementY / 100;
 });
 
 loadScene();
@@ -208,14 +216,15 @@ async function loadImageData() {
     );
 
     // set up helpers in the scene for the cameras
-
     const axis = new THREE.AxesHelper(0.5);
     axis.position.copy(pose.position);
     axis.applyQuaternion(pose.quaternion);
     scene.add(axis);
 
-    // const helper = new THREE.CameraHelper(tempCamera);
-    // scene.add(helper);
+    const helper = new THREE.CameraHelper(tempCamera);
+    helper.visible = showCameraHelpers;
+    cameraHelpers.push(helper);
+    scene.add(helper);
   });
 
   console.log('Loaded image and camera data');

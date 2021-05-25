@@ -23,7 +23,7 @@ void main() {
   for(int i = 0; i < CAMERA_COUNT; i++) {
     Camera c = cameras[i];
     // color += cameraWeights[i] * c.color;
-    vec4 texColor = texture(images, vec3(projectedCoords[i], float(i)));
+    vec4 texColor = texture(images, vec3(fract(projectedCoords[i]), float(i)));
     color += cameraWeights[i] * texColor.rgb;
   }
 
