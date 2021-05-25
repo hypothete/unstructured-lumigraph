@@ -3,6 +3,8 @@ import * as THREE from './vendor/three.module.js';
 import { OBJLoader } from './vendor/OBJLoader.js';
 // import { OrbitControls } from './vendor/OrbitControls.js';
 
+const DATA_FOLDER = 'cube';
+
 const scene = new THREE.Scene();
 let width = window.innerWidth;
 let height = window.innerHeight;
@@ -17,6 +19,7 @@ let imageTexture;
 let poses;
 let showCameraHelpers = false;
 const cameraHelpers = [];
+let shaderMode = 0;
 
 renderer.setSize(width, height);
 document.body.appendChild(renderer.domElement);
@@ -64,6 +67,14 @@ window.addEventListener('keydown', (e) => {
         helper.visible = showCameraHelpers;
       });
       break;
+    case 'm':
+      shaderMode += 1;
+      if (shaderMode > 2) {
+        shaderMode = 0;
+      }
+      proxyMat.uniforms.mode.value = shaderMode;
+      proxyMat.needsUpdate = true;
+      break;
     default:
   }
 });
@@ -101,15 +112,15 @@ async function loadScene() {
 }
 
 async function loadShaders() {
-  vertexShader = await fetch('./vertex2.glsl').then((res) => res.text());
-  fragmentShader = await fetch('./fragment2.glsl').then((res) => res.text());
+  vertexShader = await fetch('./vertex.glsl').then((res) => res.text());
+  fragmentShader = await fetch('./fragment.glsl').then((res) => res.text());
   console.log('Loaded shaders');
 }
 
 async function loadGeometry() {
   return new Promise((res) => {
     const loader = new OBJLoader();
-    loader.load('data/proxy.obj', (proxyObj) => {
+    loader.load(`data/${DATA_FOLDER}/proxy.obj`, (proxyObj) => {
       proxyGeo = proxyObj.children[0].geometry.clone();
       console.log('loaded geometry');
       res();
@@ -139,11 +150,13 @@ function getColor(index) {
 }
 
 async function loadImageData() {
-  const rawImgText = await fetch('./data/images.txt').then((res) => res.text());
+  const rawImgText = await fetch(`./data/${DATA_FOLDER}/images.txt`).then(
+    (res) => res.text()
+  );
   poses = rawImgText
     .split(`\r\n`)
     .filter((line) => {
-      return line.endsWith('jpg');
+      return line.toLocaleLowerCase().endsWith('jpg');
     })
     .map((line) => {
       const fields = line.split(' ');
@@ -172,8 +185,8 @@ async function loadImageData() {
       };
     });
 
-  const rawCameraText = await fetch('./data/cameras.txt').then((res) =>
-    res.text()
+  const rawCameraText = await fetch(`./data/${DATA_FOLDER}/cameras.txt`).then(
+    (res) => res.text()
   );
 
   rawCameraText
@@ -245,6 +258,9 @@ function makeProxy() {
         value: cameraStructs,
       },
       images: { value: imageTexture },
+      mode: {
+        value: 0,
+      },
     },
   });
 
@@ -269,7 +285,7 @@ async function loadImageTexture() {
   const bufferTx = await Promise.all(
     filenames.map(async (filename) => {
       const loadedTx = await textureLoader.loadAsync(
-        `./data/images/${filename}`
+        `./data/${DATA_FOLDER}/images/${filename}`
       );
       return imgToRGBABuffer(loadedTx.image, resX, resY);
     })
