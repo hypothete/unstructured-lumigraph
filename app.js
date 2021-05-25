@@ -6,7 +6,7 @@ import { OBJLoader } from './vendor/OBJLoader.js';
 const scene = new THREE.Scene();
 let width = window.innerWidth;
 let height = window.innerHeight;
-const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(45, width / height, 0.001, 1000);
 const renderer = new THREE.WebGLRenderer();
 let mousedown = false;
 let proxyGeo, proxyMat, proxy;
@@ -23,7 +23,6 @@ camera.lookAt(new THREE.Vector3(0, 0, 1000));
 scene.add(camera);
 
 // const controls = new OrbitControls(camera, renderer.domElement);
-
 // controls.target = new THREE.Vector3(0, 0, 0);
 // controls.panSpeed = 2;
 // controls.enableDamping = true;

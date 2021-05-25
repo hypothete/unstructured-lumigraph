@@ -14,6 +14,7 @@ struct Camera {
 uniform Camera cameras[CAMERA_COUNT];
 
 out float cameraWeights[CAMERA_COUNT];
+out vec2 projectedCoords[CAMERA_COUNT];
 
 float angDiff(Camera c) {
   vec4 worldPos = modelMatrix * vec4(position, 1.0);
@@ -167,7 +168,13 @@ void main() {
   // set final camera weights
   for(int i = 0; i < CAMERA_COUNT; i++) {
     cameraWeights[i] = angResFovBlends[i] / sumKAngResFovBlends;
+    vec4 worldPos = modelMatrix * vec4(position, 1.0);
+    vec4 camView = cameras[i].matrix * worldPos;
+    camView.y *= -1.0;
+    projectedCoords[i] = camView.xy / 50.0 + vec2(0.4, 0.33);
   }
+
+
   
   gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 }
