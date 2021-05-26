@@ -107,8 +107,8 @@ async function loadGeometry() {
   return new Promise((res) => {
     const loader = new OBJLoader();
     loader.load(`data/${DATA_FOLDER}/proxy.obj`, (proxyObj) => {
-      proxyGeo = proxyObj.children[0].geometry.clone();
-      // proxyGeo = new THREE.PlaneBufferGeometry(50, 50, 51, 51);
+      // proxyGeo = proxyObj.children[0].geometry.clone();
+      proxyGeo = new THREE.PlaneBufferGeometry(70, 70, 71, 71);
       console.log('loaded geometry');
       res();
     });
@@ -168,7 +168,7 @@ async function loadImageData() {
       return {
         imageId: Number(fields[0]),
         quaternion: qua,
-        position: new THREE.Vector3(pos.x, pos.y, -pos.z),
+        position: new THREE.Vector3(pos.x * 5, pos.y * 5, -pos.z),
       };
     });
 
@@ -201,7 +201,7 @@ async function loadImageData() {
       pose.fov,
       pose.aspect,
       0.01,
-      100
+      10
     );
     tempCamera.position.copy(pose.position);
     tempCamera.applyQuaternion(pose.quaternion);
@@ -253,11 +253,12 @@ function makeProxy() {
 
   proxy = new THREE.Mesh(proxyGeo, proxyMat);
   scene.add(proxy);
-  // proxy.position.z = 6;
+  proxy.position.z = 8;
+  proxy.rotation.y += Math.PI;
 
-  proxy.rotation.y = Math.PI;
+  // proxy.scale.x = -1;
+  // proxy.scale.y = -1;
 
-  proxy.rotation.x = Math.PI;
   console.log('Proxy loaded');
 }
 
