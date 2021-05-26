@@ -32,7 +32,7 @@ float angBlend(float ang, float angThresh) {
 
 float resDiff(Camera c) {
   vec4 worldPos = modelMatrix * vec4(position, 1.0);
-  return max(0.0, length(worldPos.xyz - c.position) - length(worldPos.xyz - cameraPosition));
+  return max(0.0, length(worldPos.xyz - cameraPosition) - length(worldPos.xyz - c.position));
 }
 
 float angResDiff(Camera c) {
