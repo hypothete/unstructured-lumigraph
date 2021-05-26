@@ -171,7 +171,7 @@ void main() {
     cameraWeights[i] = angResFovBlends[i] / sumKAngResFovBlends;
     vec4 worldPos = modelMatrix * vec4(position, 1.0);
     vec4 camView = cameras[i].matrix * worldPos;
-    projectedCoords[i] = clamp(vec2(0.0), vec2(1.0), 0.5 * camView.xy/camView.w + vec2(0.5));
+    projectedCoords[i] = 0.5 * camView.xy/camView.w + vec2(0.5);
   }
 
   nrm = 0.5 + 0.5 * normalize(modelMatrix * vec4(normal, 0.0)).xyz;
