@@ -39,5 +39,5 @@ void main() {
     color = nrm;
   }
 
-  gl_FragColor = vec4(color, 1.0);
+  gl_FragColor = vec4(clamp(color, vec3(0.0), vec3(1.0)), 1.0);
 }

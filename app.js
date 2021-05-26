@@ -108,6 +108,7 @@ async function loadScene() {
   await loadGeometry();
   await loadShaders();
   makeProxy();
+  startCamera();
   animate();
 }
 
@@ -268,6 +269,15 @@ function makeProxy() {
   scene.add(proxy);
   proxy.scale.y = -1;
   proxy.scale.x = -1;
+  console.log('Proxy loaded');
+}
+
+function startCamera() {
+  // start camera in one of the poses
+  const pose = poses[Math.floor(poses.length / 2)];
+  camera.position.copy(pose.position);
+  camera.applyQuaternion(pose.quaternion);
+  console.log('Scene loaded!');
 }
 
 function imgToRGBABuffer(img, w, h) {
@@ -275,6 +285,7 @@ function imgToRGBABuffer(img, w, h) {
   const ctx = can.getContext('2d');
   can.width = w;
   can.height = h;
+
   ctx.drawImage(img, 0, 0);
   const imgData = ctx.getImageData(0, 0, w, h);
   return imgData.data;
