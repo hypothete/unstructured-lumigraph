@@ -2,7 +2,7 @@ precision highp float;
 precision highp int;
 precision highp sampler2DArray;
 
-#define CAMERA_COUNT 11
+#define CAMERA_COUNT 13
 
 struct Camera {
   vec3 position;
@@ -26,7 +26,10 @@ void main() {
     // show blended lumigraph
     for(int i = 0; i < CAMERA_COUNT; i++) {
       Camera c = cameras[i];
-      vec4 texColor = texture(images, vec3(fract(projectedCoords[i]), float(i)));
+      vec4 texColor = texture(images, vec3(fract(
+        vec2(1.0 - projectedCoords[i].x,
+        projectedCoords[i].y)
+        ), float(i)));
       color += cameraWeights[i] * texColor.rgb;
     }
   } else if (mode == 1) {

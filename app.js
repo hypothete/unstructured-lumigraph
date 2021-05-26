@@ -1,7 +1,7 @@
 // import * as THREE from './node_modules/three/build/three.module.js';
 import * as THREE from './vendor/three.module.js';
 import { OBJLoader } from './vendor/OBJLoader.js';
-// import { OrbitControls } from './vendor/OrbitControls.js';
+import { OrbitControls } from './vendor/OrbitControls.js';
 
 const DATA_FOLDER = 'cube';
 
@@ -27,10 +27,13 @@ camera.position.set(0, 0, 4);
 camera.lookAt(new THREE.Vector3(0, 0, 1000));
 scene.add(camera);
 
-// const controls = new OrbitControls(camera, renderer.domElement);
-// controls.target = new THREE.Vector3(0, 0, 0);
-// controls.panSpeed = 2;
-// controls.enableDamping = true;
+// const worldAxis = new THREE.AxesHelper(20);
+// scene.add(worldAxis);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target = new THREE.Vector3(0, 0, 0);
+controls.panSpeed = 2;
+controls.enableDamping = true;
 
 window.addEventListener('resize', () => {
   width = window.innerWidth;
@@ -43,24 +46,6 @@ window.addEventListener('resize', () => {
 
 window.addEventListener('keydown', (e) => {
   switch (e.key) {
-    case 'a':
-      camera.position.x += 0.2;
-      break;
-    case 'd':
-      camera.position.x -= 0.2;
-      break;
-    case 'w':
-      camera.position.y += 0.2;
-      break;
-    case 's':
-      camera.position.y -= 0.2;
-      break;
-    case 'q':
-      camera.position.z += 0.5;
-      break;
-    case 'z':
-      camera.position.z -= 0.5;
-      break;
     case 'c':
       showCameraHelpers = !showCameraHelpers;
       cameraHelpers.forEach((helper) => {
@@ -98,7 +83,7 @@ loadScene();
 
 function animate() {
   requestAnimationFrame(animate);
-  // controls.update();
+  controls.update();
   renderer.render(scene, camera);
 }
 
@@ -123,6 +108,7 @@ async function loadGeometry() {
     const loader = new OBJLoader();
     loader.load(`data/${DATA_FOLDER}/proxy.obj`, (proxyObj) => {
       proxyGeo = proxyObj.children[0].geometry.clone();
+      // proxyGeo = new THREE.PlaneBufferGeometry(50, 50, 51, 51);
       console.log('loaded geometry');
       res();
     });
@@ -147,7 +133,7 @@ function getColor(index) {
     [0.3, 0.0, 0.7],
     [0.5, 0.5, 0.5],
   ];
-  return colors[index];
+  return colors[index % colors.length];
 }
 
 async function loadImageData() {
@@ -219,10 +205,10 @@ async function loadImageData() {
     );
     tempCamera.position.copy(pose.position);
     tempCamera.applyQuaternion(pose.quaternion);
+    tempCamera.scale.y = -1;
+    tempCamera.scale.z = -1;
     tempCamera.updateMatrixWorld(true);
-    tempCamera.rotation.y += Math.PI;
 
-    tempCamera.updateMatrixWorld(true);
     pose.mvpMatrix = new THREE.Matrix4();
     pose.mvpMatrix.multiplyMatrices(
       tempCamera.projectionMatrix,
@@ -267,8 +253,11 @@ function makeProxy() {
 
   proxy = new THREE.Mesh(proxyGeo, proxyMat);
   scene.add(proxy);
-  proxy.scale.y = -1;
-  proxy.scale.x = -1;
+  // proxy.position.z = 6;
+
+  proxy.rotation.y = Math.PI;
+
+  proxy.rotation.x = Math.PI;
   console.log('Proxy loaded');
 }
 

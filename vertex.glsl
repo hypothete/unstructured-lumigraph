@@ -1,7 +1,7 @@
 precision highp float;
 precision highp int;
 
-#define CAMERA_COUNT 11
+#define CAMERA_COUNT 13
 #define CLOSEST_K 4
 #define RES_WEIGHT 0.5
 
@@ -171,8 +171,7 @@ void main() {
     cameraWeights[i] = angResFovBlends[i] / sumKAngResFovBlends;
     vec4 worldPos = modelMatrix * vec4(position, 1.0);
     vec4 camView = cameras[i].matrix * worldPos;
-    camView.y *= -1.0; // flip texture Y
-    projectedCoords[i] = 0.5 * camView.xy/camView.w + vec2(0.4, 0.33);
+    projectedCoords[i] = clamp(vec2(0.0), vec2(1.0), 0.5 * camView.xy/camView.w + vec2(0.5));
   }
 
   nrm = 0.5 + 0.5 * normalize(modelMatrix * vec4(normal, 0.0)).xyz;
