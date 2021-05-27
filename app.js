@@ -1,60 +1,38 @@
 // import * as THREE from './node_modules/three/build/three.module.js';
 import * as THREE from './vendor/three.module.js';
+import { OBJLoader } from './vendor/OBJLoader.js';
 import { OrbitControls } from './vendor/OrbitControls.js';
-import Delaunator from './vendor/delaunator.js';
+
+const DATA_FOLDER = 'cube';
 
 const scene = new THREE.Scene();
 let width = window.innerWidth;
 let height = window.innerHeight;
-const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+const camera = new THREE.PerspectiveCamera(45, width / height, 0.001, 1000);
 const renderer = new THREE.WebGLRenderer();
-
-const planeGeo = new THREE.BufferGeometry();
-let imagePlane;
-
-const MAX_POINTS = 5000;
-const gridSize = 7;
-const planeIsWireframe = false;
-const planeZ = -1;
-const planePositions = new Float32Array(MAX_POINTS);
-const positionAttribute = new THREE.BufferAttribute(planePositions, 3);
-positionAttribute.usage = THREE.DynamicDrawUsage;
-
-const planeIndices = new Uint32Array(MAX_POINTS);
-const indexAttribute = new THREE.BufferAttribute(planeIndices, 3);
-indexAttribute.usage = THREE.DynamicDrawUsage;
-
-const proxyGeo = new THREE.PlaneGeometry(21, 21, 11, 11);
-const proxyMat = new THREE.MeshBasicMaterial({
-  color: 0x00ff00,
-  wireframe: true,
-});
-const proxy = new THREE.Mesh(proxyGeo, proxyMat);
-const proxyVertices = []; // used for projecting the vertices of the geometry
-// assume no dynamic vertices for now
-
+let proxyGeo, proxyMat, proxy;
 let fragmentShader, vertexShader;
-let blendMat;
-
+let resX, resY;
+const filenames = [];
+let imageTexture;
 let poses;
-const worldAxis = new THREE.AxesHelper(0.1);
+let showCameraHelpers = false;
+const cameraHelpers = [];
+let shaderMode = 0;
 
 renderer.setSize(width, height);
 document.body.appendChild(renderer.domElement);
-camera.position.set(0, 0, -10);
-camera.lookAt(new THREE.Vector3());
+camera.position.set(0, 0, -20);
+camera.lookAt(new THREE.Vector3(0, 0, 1000));
+scene.add(camera);
 
-scene.add(camera, worldAxis, proxy);
-proxy.position.z = 10;
+const worldAxis = new THREE.AxesHelper(20);
+scene.add(worldAxis);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
 controls.target = new THREE.Vector3(0, 0, 0);
 controls.panSpeed = 2;
-
-controls.addEventListener('change', () => {
-  imagePlane && updateImagePlaneGeo();
-});
+controls.enableDamping = true;
 
 window.addEventListener('resize', () => {
   width = window.innerWidth;
@@ -63,6 +41,26 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(width, height);
   renderer.render(scene, camera);
+});
+
+window.addEventListener('keydown', (e) => {
+  switch (e.key) {
+    case 'c':
+      showCameraHelpers = !showCameraHelpers;
+      cameraHelpers.forEach((helper) => {
+        helper.visible = showCameraHelpers;
+      });
+      break;
+    case 'm':
+      shaderMode += 1;
+      if (shaderMode > 2) {
+        shaderMode = 0;
+      }
+      proxyMat.uniforms.mode.value = shaderMode;
+      proxyMat.needsUpdate = true;
+      break;
+    default:
+  }
 });
 
 loadScene();
@@ -75,9 +73,11 @@ function animate() {
 
 async function loadScene() {
   await loadImageData();
+  await loadImageTexture();
+  await loadGeometry();
   await loadShaders();
-  buildImagePlane();
-  updateImagePlaneGeo();
+  makeProxy();
+  startCamera();
   animate();
 }
 
@@ -87,148 +87,201 @@ async function loadShaders() {
   console.log('Loaded shaders');
 }
 
+async function loadGeometry() {
+  return new Promise((res) => {
+    const loader = new OBJLoader();
+    loader.load(`data/${DATA_FOLDER}/proxy.obj`, (proxyObj) => {
+      proxyGeo = proxyObj.children[0].geometry.clone();
+      console.log('loaded geometry');
+      res();
+    });
+  });
+}
+
+function getColor(index) {
+  // used to have fixed colors to ensure blending field is working
+  const colors = [
+    [0.0, 1.0, 1.0],
+    [1.0, 1.0, 0.0],
+    [1.0, 0.0, 1.0],
+    [1.0, 0.0, 0.0],
+    [1.0, 0.7, 1.0],
+    [0.7, 1.0, 0.0],
+    [0.0, 0.0, 0.7],
+    [0.3, 0.3, 0.0],
+    [0.3, 0.7, 1.0],
+    [0.0, 1.0, 0.0],
+    [0.0, 0.0, 1.0],
+    [0.3, 0.0, 0.7],
+    [0.5, 0.5, 0.5],
+  ];
+  return colors[index % colors.length];
+}
+
 async function loadImageData() {
-  const rawText = await fetch('./data/images.txt').then((res) => res.text());
-  poses = rawText
+  const rawImgText = await fetch(`./data/${DATA_FOLDER}/images.txt`).then(
+    (res) => res.text()
+  );
+  poses = rawImgText
     .split(`\r\n`)
     .filter((line) => {
-      return line.endsWith('jpg');
+      return line.toLocaleLowerCase().endsWith('jpg');
     })
     .map((line) => {
       const fields = line.split(' ');
-      const qua = new THREE.Quaternion(
+      filenames.push(fields[fields.length - 1]);
+      const quaternion = new THREE.Quaternion(
         Number(fields[2]),
         Number(fields[3]),
         Number(fields[4]),
         Number(fields[1])
       );
+
       const rotMat = new THREE.Matrix4();
-      rotMat.makeRotationFromQuaternion(qua);
+      rotMat.makeRotationFromQuaternion(quaternion);
       rotMat.invert();
-      const tra = new THREE.Vector4(
+
+      const translation = new THREE.Vector3(
         Number(fields[5]),
         Number(fields[6]),
-        Number(fields[7]),
-        0
+        Number(fields[7])
       );
-      const pos = tra.applyMatrix4(rotMat);
+      const position = translation.applyMatrix4(rotMat);
 
       return {
         imageId: Number(fields[0]),
-        quaternion: qua,
-        position: new THREE.Vector3(pos.x, pos.y, -pos.z),
+        quaternion,
+        position,
       };
     });
 
+  const rawCameraText = await fetch(`./data/${DATA_FOLDER}/cameras.txt`).then(
+    (res) => res.text()
+  );
+
+  rawCameraText
+    .split(`\r\n`)
+    .filter((line) => {
+      return line.length > 2 && !line.startsWith('#');
+    })
+    .forEach((line, lineIndex) => {
+      const fields = line.split(' ').map(Number);
+      const camIndex = fields[0] - 1;
+      if (lineIndex === 0) {
+        // get resolution
+        resX = fields[2];
+        resY = fields[3];
+      }
+      // vertical fov
+      poses[camIndex].fov =
+        (180 * 2 * Math.atan(fields[3] / (2 * fields[4]))) / Math.PI;
+      poses[camIndex].aspect = Number(fields[2] / fields[3]);
+    });
+
+  // get mvpMatrix for each camera
   poses.forEach((pose) => {
-    const axis = new THREE.AxesHelper(0.5);
-    axis.position.copy(pose.position);
-    axis.applyQuaternion(pose.quaternion);
-    scene.add(axis);
-    const ah = new THREE.ArrowHelper(
-      new THREE.Vector3(0, 0, 1),
-      new THREE.Vector3(),
-      4,
-      0x0000ff
+    const poseCamera = new THREE.PerspectiveCamera(
+      pose.fov,
+      pose.aspect,
+      0.01,
+      30
     );
-    axis.add(ah);
+    poseCamera.position.copy(pose.position);
+    poseCamera.applyQuaternion(pose.quaternion);
+
+    poseCamera.updateMatrixWorld(true);
+    pose.mvpMatrix = new THREE.Matrix4();
+    pose.mvpMatrix.multiplyMatrices(
+      poseCamera.projectionMatrix,
+      poseCamera.matrixWorldInverse
+    );
+    scene.add(poseCamera);
+
+    // set up helpers in the scene for the cameras
+    const axis = new THREE.AxesHelper(0.5);
+    poseCamera.add(axis);
+
+    const helper = new THREE.CameraHelper(poseCamera);
+    helper.visible = showCameraHelpers;
+    cameraHelpers.push(helper);
+    scene.add(helper);
   });
+
+  console.log('Loaded image and camera data');
 }
 
-function buildImagePlane() {
-  planeGeo.setAttribute('position', positionAttribute);
-  planeGeo.index = indexAttribute;
-
-  const cameraStructs = poses.map((pose) => ({
-    position: new THREE.Vector3(0, 0, 0),
-    color: new THREE.Vector3(Math.random(), Math.random(), Math.random()),
+function makeProxy() {
+  const cameraStructs = poses.map((pose, poseIndex) => ({
+    position: pose.position,
+    color: new THREE.Vector3(...getColor(poseIndex)),
+    matrix: pose.mvpMatrix,
   }));
 
-  blendMat = new THREE.ShaderMaterial({
+  proxyMat = new THREE.ShaderMaterial({
     fragmentShader,
     vertexShader,
-    transparent: true,
-    wireframe: planeIsWireframe,
     uniforms: {
       cameras: {
         value: cameraStructs,
       },
+      images: { value: imageTexture },
+      mode: {
+        value: 0,
+      },
     },
   });
 
-  blendMat.side = THREE.BackSide;
+  proxy = new THREE.Mesh(proxyGeo, proxyMat);
+  scene.add(proxy);
 
-  imagePlane = new THREE.Mesh(planeGeo, blendMat);
-  camera.add(imagePlane);
-  imagePlane.position.z = planeZ;
+  // scale adjustment
+  // proxy.scale.x = -1;
+  // proxy.scale.y = -1;
+
+  console.log('Proxy loaded');
 }
 
-function updateImagePlaneGeo() {
-  const { aspect, fov } = camera;
-  const height = 2 * Math.tan((Math.PI / 180) * fov * 0.5);
-  const width = height * aspect;
-  const points = [];
-  const imagePlaneScale = new THREE.Vector3(width / 2, height / 2, 0);
+function startCamera() {
+  // start camera in one of the poses
+  // const pose = poses[Math.floor(poses.length / 2)];
+  // camera.position.copy(pose.position);
+  // camera.applyQuaternion(pose.quaternion);
+  console.log('Scene loaded!');
+}
 
-  for (let i = 0; i <= gridSize; i++) {
-    for (let j = 0; j <= gridSize; j++) {
-      const newPt = new THREE.Vector3(
-        (i / gridSize) * width - width / 2,
-        (j / gridSize) * height - height / 2,
-        0
+function imgToRGBABuffer(img, w, h) {
+  const can = document.createElement('canvas');
+  const ctx = can.getContext('2d');
+  can.width = w;
+  can.height = h;
+
+  ctx.drawImage(img, 0, 0);
+  const imgData = ctx.getImageData(0, 0, w, h);
+  return imgData.data;
+}
+
+async function loadImageTexture() {
+  const textureLoader = new THREE.TextureLoader();
+  const bufferTx = await Promise.all(
+    filenames.map(async (filename) => {
+      const loadedTx = await textureLoader.loadAsync(
+        `./data/${DATA_FOLDER}/images/${filename}`
       );
-      points.push(newPt);
-    }
-  }
-
-  poses.forEach((pose, poseIndex) => {
-    let posePos = pose.position.clone();
-    posePos.project(camera);
-    posePos.multiply(imagePlaneScale);
-    points.push(posePos);
-    // update existing cameraStructs - assumes pose order has not changed
-    blendMat.uniforms.cameras.value[poseIndex].position = posePos;
-  });
-
-  // project proxy to plane
-  if (!proxyVertices.length) {
-    const proxyPositions = proxyGeo.getAttribute('position');
-    for (
-      let i = 0;
-      i < proxyPositions.array.length;
-      i += proxyPositions.itemSize
-    ) {
-      const proxyVertex = new THREE.Vector3(
-        ...proxyPositions.array.slice(i, i + proxyPositions.itemSize)
-      );
-      proxyVertices.push(proxyVertex);
-    }
-  }
-
-  proxyVertices.forEach((proxyVertex) => {
-    let vertex = proxyVertex.clone();
-    vertex.applyMatrix4(proxy.matrixWorld);
-    vertex.project(camera);
-    vertex.multiply(imagePlaneScale);
-    points.push(vertex);
-  });
-
-  planePositions.fill(0);
-  planePositions.set(
-    points.reduce((acc, pt) => [...acc, pt.x, pt.y, pt.z], []),
-    0
+      return imgToRGBABuffer(loadedTx.image, resX, resY);
+    })
   );
-  planeGeo.attributes.position.needsUpdate = true;
-
-  const delaunay = Delaunator.from(points.map((pt) => [pt.x, pt.y]));
-  const meshIndex = [];
-  for (let i = 0; i < delaunay.triangles.length; i++) {
-    meshIndex.push(delaunay.triangles[i]);
-  }
-
-  planeIndices.fill(0);
-  planeIndices.set(meshIndex, 0);
-  planeGeo.index.needsUpdate = true;
-
-  planeGeo.computeVertexNormals();
+  const totalBytes = bufferTx.reduce((acc, buf) => acc + buf.byteLength, 0);
+  const allBuffer = new Uint8Array(totalBytes);
+  let offset = 0;
+  bufferTx.forEach((buf) => {
+    allBuffer.set(buf, offset);
+    offset += buf.byteLength;
+  });
+  imageTexture = new THREE.DataTexture2DArray(
+    allBuffer,
+    resX,
+    resY,
+    poses.length
+  );
+  console.log('Loaded images into texture');
 }
