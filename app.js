@@ -18,7 +18,13 @@ let imageTexture;
 let poses;
 let showCameraHelpers = false;
 const cameraHelpers = [];
+
+// mode 0 = lumigraph rendering
+// mode 1 = blending field
+// mode 2 = show proxy normals
 let shaderMode = 0;
+
+// spread out cameras across a plane to check projection
 let proxyIsPlane = false;
 
 renderer.setSize(width, height);
@@ -53,10 +59,7 @@ window.addEventListener('keydown', (e) => {
       });
       break;
     case 'm':
-      shaderMode += 1;
-      if (shaderMode > 2) {
-        shaderMode = 0;
-      }
+      shaderMode = (shaderMode + 1) % 3;
       proxyMat.uniforms.mode.value = shaderMode;
       proxyMat.needsUpdate = true;
       break;
@@ -78,7 +81,7 @@ async function loadScene() {
   await loadGeometry();
   await loadShaders();
   makeProxy();
-  startCamera();
+  console.log('Scene loaded!');
   animate();
 }
 
@@ -94,6 +97,7 @@ async function loadGeometry() {
     console.log('loaded geometry');
     return;
   }
+
   return new Promise((res) => {
     const loader = new OBJLoader();
     loader.load(`data/${DATA_FOLDER}/proxy.obj`, (proxyObj) => {
@@ -156,7 +160,6 @@ async function loadImageData() {
       position.z *= -1;
 
       if (proxyIsPlane) {
-        // spread out cameras to check projection
         position.x *= 5;
         position.y *= 5;
       }
@@ -215,7 +218,7 @@ async function loadImageData() {
     scene.add(poseCamera);
 
     // set up helpers in the scene for the cameras
-    const axis = new THREE.AxesHelper(0.5);
+    const axis = new THREE.AxesHelper(0.2);
     poseCamera.add(axis);
 
     const helper = new THREE.CameraHelper(poseCamera);
@@ -251,8 +254,7 @@ function makeProxy() {
   proxy = new THREE.Mesh(proxyGeo, proxyMat);
   scene.add(proxy);
 
-  // scale adjustment
-
+  // proxy scale and position adjustment
   if (proxyIsPlane) {
     proxy.position.z = 6;
     proxy.rotation.y = Math.PI;
@@ -264,14 +266,6 @@ function makeProxy() {
   console.log('Proxy loaded');
 }
 
-function startCamera() {
-  // start camera in one of the poses
-  // const pose = poses[Math.floor(poses.length / 2)];
-  // camera.position.copy(pose.position);
-  // camera.applyQuaternion(pose.quaternion);
-  console.log('Scene loaded!');
-}
-
 function imgToRGBABuffer(img, w, h) {
   const can = document.createElement('canvas');
   const ctx = can.getContext('2d');
@@ -279,8 +273,6 @@ function imgToRGBABuffer(img, w, h) {
   can.height = h;
 
   ctx.drawImage(img, 0, 0, w, h);
-  // ctx.fillStyle = '#fff';
-  // ctx.fillRect(0, 0, w, h);
   const imgData = ctx.getImageData(0, 0, w, h);
   return imgData.data;
 }
