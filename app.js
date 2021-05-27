@@ -19,6 +19,7 @@ let poses;
 let showCameraHelpers = false;
 const cameraHelpers = [];
 let shaderMode = 0;
+let proxyIsPlane = false;
 
 renderer.setSize(width, height);
 document.body.appendChild(renderer.domElement);
@@ -26,8 +27,8 @@ camera.position.set(0, 0, -20);
 camera.lookAt(new THREE.Vector3(0, 0, 1000));
 scene.add(camera);
 
-const worldAxis = new THREE.AxesHelper(20);
-scene.add(worldAxis);
+// const worldAxis = new THREE.AxesHelper(20);
+// scene.add(worldAxis);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target = new THREE.Vector3(0, 0, 0);
@@ -88,6 +89,11 @@ async function loadShaders() {
 }
 
 async function loadGeometry() {
+  if (proxyIsPlane) {
+    proxyGeo = new THREE.PlaneBufferGeometry(50, 50, 51, 51);
+    console.log('loaded geometry');
+    return;
+  }
   return new Promise((res) => {
     const loader = new OBJLoader();
     loader.load(`data/${DATA_FOLDER}/proxy.obj`, (proxyObj) => {
@@ -147,6 +153,13 @@ async function loadImageData() {
         Number(fields[7])
       );
       const position = translation.applyMatrix4(rotMat);
+      position.z *= -1;
+
+      if (proxyIsPlane) {
+        // spread out cameras to check projection
+        position.x *= 5;
+        position.y *= 5;
+      }
 
       return {
         imageId: Number(fields[0]),
@@ -188,6 +201,10 @@ async function loadImageData() {
     );
     poseCamera.position.copy(pose.position);
     poseCamera.applyQuaternion(pose.quaternion);
+
+    poseCamera.rotation.y += Math.PI;
+    poseCamera.scale.x = -1;
+    poseCamera.scale.y = -1;
 
     poseCamera.updateMatrixWorld(true);
     pose.mvpMatrix = new THREE.Matrix4();
@@ -235,8 +252,14 @@ function makeProxy() {
   scene.add(proxy);
 
   // scale adjustment
-  // proxy.scale.x = -1;
-  // proxy.scale.y = -1;
+
+  if (proxyIsPlane) {
+    proxy.position.z = 6;
+    proxy.rotation.y = Math.PI;
+  } else {
+    proxy.scale.x = -1;
+    proxy.scale.y = -1;
+  }
 
   console.log('Proxy loaded');
 }
@@ -255,7 +278,9 @@ function imgToRGBABuffer(img, w, h) {
   can.width = w;
   can.height = h;
 
-  ctx.drawImage(img, 0, 0);
+  ctx.drawImage(img, 0, 0, w, h);
+  // ctx.fillStyle = '#fff';
+  // ctx.fillRect(0, 0, w, h);
   const imgData = ctx.getImageData(0, 0, w, h);
   return imgData.data;
 }
