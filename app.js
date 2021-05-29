@@ -29,7 +29,7 @@ renderer.setSize(width, height);
 document.body.appendChild(renderer.domElement);
 camera.position.set(0, 0, -20);
 
-if (DATA_FOLDER === 'statue') {
+if (DATA_FOLDER === 'statue' || DATA_FOLDER === 'kettle') {
   camera.up = new THREE.Vector3(1, 0, 0);
 }
 
@@ -43,6 +43,8 @@ scene.add(worldAxis);
 const controls = new OrbitControls(camera, renderer.domElement);
 if (DATA_FOLDER === 'statue') {
   controls.target = new THREE.Vector3(0, 3.5, 5);
+} else if (DATA_FOLDER === 'kettle') {
+  controls.target = new THREE.Vector3(0, 0, 16);
 } else {
   controls.target = new THREE.Vector3(0, 0, 0);
 }
@@ -104,6 +106,8 @@ async function loadShaders() {
 async function loadGeometry() {
   if (DATA_FOLDER === 'statue') {
     proxyGeo = new THREE.CylinderBufferGeometry(2.2, 2.2, 8, 120, 60, false);
+  } else if (DATA_FOLDER === 'kettle') {
+    proxyGeo = new THREE.PlaneBufferGeometry(40, 30, 120, 90);
   } else {
     await new Promise((res) => {
       const loader = new OBJLoader();
@@ -305,6 +309,9 @@ function makeProxy() {
     proxy.rotation.z = Math.PI / 2;
     proxy.position.z += 4;
     proxy.position.y += 3.5;
+  } else if (DATA_FOLDER === 'kettle') {
+    proxy.rotation.y = Math.PI;
+    proxy.position.z += 16;
   } else {
     proxy.scale.x = -1;
     proxy.scale.y = -1;
