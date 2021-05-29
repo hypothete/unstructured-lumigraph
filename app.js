@@ -44,7 +44,7 @@ const controls = new OrbitControls(camera, renderer.domElement);
 if (DATA_FOLDER === 'statue') {
   controls.target = new THREE.Vector3(0, 3.5, 5);
 } else if (DATA_FOLDER === 'kettle') {
-  controls.target = new THREE.Vector3(0, 0, 16);
+  controls.target = new THREE.Vector3(0, 0, 17);
 } else {
   controls.target = new THREE.Vector3(0, 0, 0);
 }
@@ -288,7 +288,7 @@ function makeProxy() {
     defines: {
       CAMERA_COUNT: cameraStructs.length,
       CLOSEST_K: 4,
-      RES_WEIGHT: 0.5,
+      RES_WEIGHT: 0.2,
     },
     uniforms: {
       cameras: {
@@ -311,7 +311,7 @@ function makeProxy() {
     proxy.position.y += 3.5;
   } else if (DATA_FOLDER === 'kettle') {
     proxy.rotation.y = Math.PI;
-    proxy.position.z += 16;
+    proxy.position.z += 17;
   } else {
     proxy.scale.x = -1;
     proxy.scale.y = -1;

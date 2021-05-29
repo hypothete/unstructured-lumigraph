@@ -109,7 +109,6 @@ void main() {
   float nrmAngBlends[CAMERA_COUNT];
   for(int i = 0; i < CAMERA_COUNT; i++) {
     nrmAngBlends[i] = angBlends[i] / sumKAngBlends;
-    // cameraWeights[i] = nrmAngBlends[i];
   }
 
 
