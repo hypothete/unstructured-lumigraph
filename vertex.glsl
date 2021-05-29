@@ -1,3 +1,6 @@
+precision highp float;
+precision highp int;
+
 struct Camera {
   vec3 position;
   vec3 color;

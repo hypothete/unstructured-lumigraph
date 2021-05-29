@@ -1,3 +1,7 @@
+precision highp float;
+precision highp int;
+precision highp sampler2DArray;
+
 struct Camera {
   vec3 position;
   vec3 color;

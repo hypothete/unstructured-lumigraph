@@ -3,7 +3,7 @@ import * as THREE from './vendor/three.module.js';
 import { OBJLoader } from './vendor/OBJLoader.js';
 import { OrbitControls } from './vendor/OrbitControls.js';
 
-const DATA_FOLDER = 'cube';
+const DATA_FOLDER = 'statue';
 
 const scene = new THREE.Scene();
 let width = window.innerWidth;
@@ -35,8 +35,9 @@ if (DATA_FOLDER === 'statue') {
 camera.lookAt(new THREE.Vector3(0, 0, 1000));
 scene.add(camera);
 
-// const worldAxis = new THREE.AxesHelper(20);
-// scene.add(worldAxis);
+const worldAxis = new THREE.AxesHelper(20);
+worldAxis.visible = showCameraHelpers;
+scene.add(worldAxis);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 if (DATA_FOLDER === 'statue') {
@@ -64,6 +65,7 @@ window.addEventListener('keydown', (e) => {
       cameraHelpers.forEach((helper) => {
         helper.visible = showCameraHelpers;
       });
+      worldAxis.visible = showCameraHelpers;
       break;
     case 'm':
       shaderMode = (shaderMode + 1) % 3;
@@ -100,7 +102,7 @@ async function loadShaders() {
 
 async function loadGeometry() {
   if (DATA_FOLDER === 'statue') {
-    proxyGeo = new THREE.CylinderBufferGeometry(3, 3, 8, 60, 30, false);
+    proxyGeo = new THREE.CylinderBufferGeometry(3, 3, 10, 120, 60, false);
   } else {
     await new Promise((res) => {
       const loader = new OBJLoader();
@@ -275,27 +277,14 @@ function makeProxy() {
     matrix: pose.mvpMatrix,
   }));
 
-  // update defines on shaders to get camera count
-  const vertexSnippet = `
-precision highp float;
-precision highp int;
-
-#define CAMERA_COUNT ${cameraStructs.length}
-#define CLOSEST_K 4
-#define RES_WEIGHT 0.5
-`;
-
-  const fragmentSnippet = `
-precision highp float;
-precision highp int;
-precision highp sampler2DArray;
-
-#define CAMERA_COUNT ${cameraStructs.length}
-`;
-
   proxyMat = new THREE.ShaderMaterial({
-    fragmentShader: `${fragmentSnippet}${fragmentShader}`,
-    vertexShader: `${vertexSnippet}${vertexShader}`,
+    fragmentShader,
+    vertexShader,
+    defines: {
+      CAMERA_COUNT: cameraStructs.length,
+      CLOSEST_K: 4,
+      RES_WEIGHT: 0.5,
+    },
     uniforms: {
       cameras: {
         value: cameraStructs,
@@ -313,7 +302,7 @@ precision highp sampler2DArray;
   // proxy scale and position adjustment
   if (DATA_FOLDER === 'statue') {
     proxy.rotation.z = Math.PI / 2;
-    proxy.position.z += 5;
+    proxy.position.z += 4;
     proxy.position.y += 3.5;
   } else {
     proxy.scale.x = -1;
