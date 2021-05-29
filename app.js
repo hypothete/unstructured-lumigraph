@@ -3,7 +3,8 @@ import * as THREE from './vendor/three.module.js';
 import { OBJLoader } from './vendor/OBJLoader.js';
 import { OrbitControls } from './vendor/OrbitControls.js';
 
-const DATA_FOLDER = 'statue';
+const searchParam = new URLSearchParams(window.location.search);
+const DATA_FOLDER = searchParam.get('model') || 'cube';
 
 const scene = new THREE.Scene();
 let width = window.innerWidth;
@@ -102,7 +103,7 @@ async function loadShaders() {
 
 async function loadGeometry() {
   if (DATA_FOLDER === 'statue') {
-    proxyGeo = new THREE.CylinderBufferGeometry(3, 3, 10, 120, 60, false);
+    proxyGeo = new THREE.CylinderBufferGeometry(2.2, 2.2, 8, 120, 60, false);
   } else {
     await new Promise((res) => {
       const loader = new OBJLoader();
