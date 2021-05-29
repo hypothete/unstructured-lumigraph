@@ -1,9 +1,3 @@
-precision highp float;
-precision highp int;
-precision highp sampler2DArray;
-
-#define CAMERA_COUNT 13
-
 struct Camera {
   vec3 position;
   vec3 color;

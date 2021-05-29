@@ -1,10 +1,3 @@
-precision highp float;
-precision highp int;
-
-#define CAMERA_COUNT 13
-#define CLOSEST_K 4
-#define RES_WEIGHT 0.5
-
 struct Camera {
   vec3 position;
   vec3 color;

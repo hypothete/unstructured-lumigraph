@@ -14,7 +14,7 @@ let proxyGeo, proxyMat, proxy;
 let fragmentShader, vertexShader;
 let resX, resY;
 const filenames = [];
-let imageTexture;
+let cameraImageArray;
 let poses;
 let showCameraHelpers = false;
 const cameraHelpers = [];
@@ -24,12 +24,14 @@ const cameraHelpers = [];
 // mode 2 = show proxy normals
 let shaderMode = 0;
 
-// spread out cameras across a plane to check projection
-let proxyIsPlane = false;
-
 renderer.setSize(width, height);
 document.body.appendChild(renderer.domElement);
 camera.position.set(0, 0, -20);
+
+if (DATA_FOLDER === 'statue') {
+  camera.up = new THREE.Vector3(1, 0, 0);
+}
+
 camera.lookAt(new THREE.Vector3(0, 0, 1000));
 scene.add(camera);
 
@@ -37,7 +39,12 @@ scene.add(camera);
 // scene.add(worldAxis);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target = new THREE.Vector3(0, 0, 0);
+if (DATA_FOLDER === 'statue') {
+  controls.target = new THREE.Vector3(0, 3.5, 5);
+} else {
+  controls.target = new THREE.Vector3(0, 0, 0);
+}
+
 controls.panSpeed = 2;
 controls.enableDamping = true;
 
@@ -76,8 +83,8 @@ function animate() {
 }
 
 async function loadScene() {
-  await loadImageData();
-  await loadImageTexture();
+  await loadPoses();
+  await loadCameraImageArray();
   await loadGeometry();
   await loadShaders();
   makeProxy();
@@ -92,24 +99,23 @@ async function loadShaders() {
 }
 
 async function loadGeometry() {
-  if (proxyIsPlane) {
-    proxyGeo = new THREE.PlaneBufferGeometry(50, 50, 51, 51);
-    console.log('loaded geometry');
-    return;
+  if (DATA_FOLDER === 'statue') {
+    proxyGeo = new THREE.CylinderBufferGeometry(3, 3, 8, 60, 30, false);
+  } else {
+    await new Promise((res) => {
+      const loader = new OBJLoader();
+      loader.load(`data/${DATA_FOLDER}/proxy.obj`, (proxyObj) => {
+        proxyGeo = proxyObj.children[0].geometry.clone();
+        res();
+      });
+    });
   }
 
-  return new Promise((res) => {
-    const loader = new OBJLoader();
-    loader.load(`data/${DATA_FOLDER}/proxy.obj`, (proxyObj) => {
-      proxyGeo = proxyObj.children[0].geometry.clone();
-      console.log('loaded geometry');
-      res();
-    });
-  });
+  console.log('loaded geometry');
 }
 
 function getColor(index) {
-  // used to have fixed colors to ensure blending field is working
+  // provides colors for cameras when visualizing the blending field
   const colors = [
     [0.0, 1.0, 1.0],
     [1.0, 1.0, 0.0],
@@ -128,7 +134,7 @@ function getColor(index) {
   return colors[index % colors.length];
 }
 
-async function loadImageData() {
+async function loadPoses() {
   const rawImgText = await fetch(`./data/${DATA_FOLDER}/images.txt`).then(
     (res) => res.text()
   );
@@ -158,11 +164,6 @@ async function loadImageData() {
       );
       const position = translation.applyMatrix4(rotMat);
       position.z *= -1;
-
-      if (proxyIsPlane) {
-        position.x *= 5;
-        position.y *= 5;
-      }
 
       return {
         imageId: Number(fields[0]),
@@ -205,6 +206,7 @@ async function loadImageData() {
     poseCamera.position.copy(pose.position);
     poseCamera.applyQuaternion(pose.quaternion);
 
+    // this appears necessary translating COLMAP coordinates to THREE.js
     poseCamera.rotation.y += Math.PI;
     poseCamera.scale.x = -1;
     poseCamera.scale.y = -1;
@@ -227,43 +229,7 @@ async function loadImageData() {
     scene.add(helper);
   });
 
-  console.log('Loaded image and camera data');
-}
-
-function makeProxy() {
-  const cameraStructs = poses.map((pose, poseIndex) => ({
-    position: pose.position,
-    color: new THREE.Vector3(...getColor(poseIndex)),
-    matrix: pose.mvpMatrix,
-  }));
-
-  proxyMat = new THREE.ShaderMaterial({
-    fragmentShader,
-    vertexShader,
-    uniforms: {
-      cameras: {
-        value: cameraStructs,
-      },
-      images: { value: imageTexture },
-      mode: {
-        value: 0,
-      },
-    },
-  });
-
-  proxy = new THREE.Mesh(proxyGeo, proxyMat);
-  scene.add(proxy);
-
-  // proxy scale and position adjustment
-  if (proxyIsPlane) {
-    proxy.position.z = 6;
-    proxy.rotation.y = Math.PI;
-  } else {
-    proxy.scale.x = -1;
-    proxy.scale.y = -1;
-  }
-
-  console.log('Proxy loaded');
+  console.log('Loaded camera poses');
 }
 
 function imgToRGBABuffer(img, w, h) {
@@ -271,13 +237,12 @@ function imgToRGBABuffer(img, w, h) {
   const ctx = can.getContext('2d');
   can.width = w;
   can.height = h;
-
   ctx.drawImage(img, 0, 0, w, h);
   const imgData = ctx.getImageData(0, 0, w, h);
   return imgData.data;
 }
 
-async function loadImageTexture() {
+async function loadCameraImageArray() {
   const textureLoader = new THREE.TextureLoader();
   const bufferTx = await Promise.all(
     filenames.map(async (filename) => {
@@ -294,11 +259,66 @@ async function loadImageTexture() {
     allBuffer.set(buf, offset);
     offset += buf.byteLength;
   });
-  imageTexture = new THREE.DataTexture2DArray(
+  cameraImageArray = new THREE.DataTexture2DArray(
     allBuffer,
     resX,
     resY,
     poses.length
   );
   console.log('Loaded images into texture');
+}
+
+function makeProxy() {
+  const cameraStructs = poses.map((pose, poseIndex) => ({
+    position: pose.position,
+    color: new THREE.Vector3(...getColor(poseIndex)),
+    matrix: pose.mvpMatrix,
+  }));
+
+  // update defines on shaders to get camera count
+  const vertexSnippet = `
+precision highp float;
+precision highp int;
+
+#define CAMERA_COUNT ${cameraStructs.length}
+#define CLOSEST_K 4
+#define RES_WEIGHT 0.5
+`;
+
+  const fragmentSnippet = `
+precision highp float;
+precision highp int;
+precision highp sampler2DArray;
+
+#define CAMERA_COUNT ${cameraStructs.length}
+`;
+
+  proxyMat = new THREE.ShaderMaterial({
+    fragmentShader: `${fragmentSnippet}${fragmentShader}`,
+    vertexShader: `${vertexSnippet}${vertexShader}`,
+    uniforms: {
+      cameras: {
+        value: cameraStructs,
+      },
+      images: { value: cameraImageArray },
+      mode: {
+        value: 0,
+      },
+    },
+  });
+
+  proxy = new THREE.Mesh(proxyGeo, proxyMat);
+  scene.add(proxy);
+
+  // proxy scale and position adjustment
+  if (DATA_FOLDER === 'statue') {
+    proxy.rotation.z = Math.PI / 2;
+    proxy.position.z += 5;
+    proxy.position.y += 3.5;
+  } else {
+    proxy.scale.x = -1;
+    proxy.scale.y = -1;
+  }
+
+  console.log('Proxy loaded');
 }
