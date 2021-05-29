@@ -40,13 +40,17 @@ float angResBlend(Camera c, float angResThresh) {
 }
 
 float fovBlend(Camera c) {
-  // TODO: feathering
   vec4 worldPos = modelMatrix * vec4(position, 1.0);
   vec4 camView = c.matrix * worldPos;
-  if (abs(camView.x/camView.w) > 1.0 || abs(camView.y/camView.w) > 1.0 || abs(camView.z/camView.w) > 1.0) {
+  camView.xyz /= camView.w;
+  if (abs(camView.x) > 1.0 || abs(camView.y) > 1.0 || abs(camView.z) > 1.0) {
     return 0.0;
   }
-  return 1.0;
+
+  // feather based on proximity to edge of fov
+  vec2 u = camView.xy * 0.5 + 0.5;
+  u = u * (1.0 - u);
+  return pow(u.x * u.y * 15.0, 0.25);
 }
 
 float angResFovBlend(Camera c, float angResThresh) {
