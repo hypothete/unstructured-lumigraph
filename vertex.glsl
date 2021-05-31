@@ -32,7 +32,7 @@ float resDiff(Camera c) {
 }
 
 float angResDiff(Camera c) {
-  return (1.0 - RES_WEIGHT) * angDiff(c) + RES_WEIGHT * resDiff(c);
+  return (1.0 - float(RES_WEIGHT)) * angDiff(c) + float(RES_WEIGHT) * resDiff(c);
 }
 
 float angResBlend(Camera c, float angResThresh) {
@@ -50,7 +50,7 @@ float fovBlend(Camera c) {
   // feather based on proximity to edge of fov
   vec2 u = camView.xy * 0.5 + 0.5;
   u = u * (1.0 - u);
-  return pow(u.x * u.y * 15.0, 0.25);
+  return pow(u.x * u.y * 15.0, 0.75);
 }
 
 float angResFovBlend(Camera c, float angResThresh) {
@@ -137,7 +137,6 @@ void main() {
   }
 
   // again threshold by the kth highest value
-  // TODO: problematic when behind cameras?
   float angResThresh = sortedResDiffs[CAMERA_COUNT - CLOSEST_K];
 
   float angResFovBlends[CAMERA_COUNT];
