@@ -6,7 +6,7 @@ const searchParam = new URLSearchParams(window.location.search);
 const loadWrap = document.querySelector('#load-wrap');
 const showControls = document.querySelector('#show-controls');
 const ctrlDesc = document.querySelector('#ctrl-desc');
-const DATA_FOLDER = searchParam.get('model') || 'cube';
+const DATA_FOLDER = searchParam.get('dataset') || 'cube';
 
 const scene = new THREE.Scene();
 let width = window.innerWidth;
