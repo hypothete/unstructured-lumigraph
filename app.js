@@ -1,9 +1,11 @@
-// import * as THREE from './node_modules/three/build/three.module.js';
 import * as THREE from './vendor/three.module.js';
 import { OBJLoader } from './vendor/OBJLoader.js';
 import { OrbitControls } from './vendor/OrbitControls.js';
 
 const searchParam = new URLSearchParams(window.location.search);
+const loadWrap = document.querySelector('#load-wrap');
+const showControls = document.querySelector('#show-controls');
+const ctrlDesc = document.querySelector('#ctrl-desc');
 const DATA_FOLDER = searchParam.get('model') || 'cube';
 
 const scene = new THREE.Scene();
@@ -79,6 +81,10 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+showControls.addEventListener('input', () => {
+  ctrlDesc.classList.toggle('hidden');
+});
+
 loadScene();
 
 function animate() {
@@ -94,6 +100,7 @@ async function loadScene() {
   await loadShaders();
   makeProxy();
   console.log('Scene loaded!');
+  loadWrap.style.display = 'none';
   animate();
 }
 

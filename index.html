@@ -8,5 +8,32 @@
   </head>
   <body>
     <script src="app.js" type="module"></script>
+    <div id="load-wrap">
+      <h1>Loading...</h1>
+    </div>
+    <div id="controls">
+      <div id="desc">
+        <p id="ctrl-desc" class="hidden">
+          Right click to pan
+          <br />
+          Left click to rotate
+          <br />
+          Scroll wheel for zoom
+          <br />
+          C toggles camera helpers
+          <br />
+          M rotates through drawing modes
+        </p>
+        <label>
+          Show controls
+          <input type="checkbox" id="show-controls" />
+        </label>
+      </div>
+      <ul>
+        <li><a href="/?model=cube">Cube</a></li>
+        <li><a href="/?model=kettle">Kettle</a></li>
+        <li><a href="/?model=statue">Statue</a></li>
+      </ul>
+    </div>
   </body>
 </html>

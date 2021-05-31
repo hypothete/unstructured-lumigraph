@@ -15,11 +15,9 @@ out vec3 nrm;
 
 float angDiff(Camera c) {
   vec4 worldPos = modelMatrix * vec4(position, 1.0);
-  vec3 mainToPoint = worldPos.xyz - cameraPosition;
-  vec3 cToPoint = worldPos.xyz - c.position;
-  float lenMain = length(mainToPoint);
-  float lenC = length(cToPoint);
-  return degrees(acos(dot(mainToPoint, cToPoint) / (lenMain * lenC)));
+  vec3 mainToPoint = normalize(worldPos.xyz - cameraPosition);
+  vec3 cToPoint = normalize(worldPos.xyz - c.position);
+  return degrees(acos(dot(mainToPoint, cToPoint)));
 }
 
 float angBlend(float ang, float angThresh) {
