@@ -22,6 +22,7 @@ void main() {
 
   if (mode == 0) {
     // show blended lumigraph
+    float totalWeight = 0.0;
     for(int i = 0; i < CAMERA_COUNT; i++) {
       Camera c = cameras[i];
       vec4 texColor = texture(images, vec3(fract(
@@ -29,16 +30,22 @@ void main() {
         projectedCoords[i].y)
         ), float(i)));
       color += cameraWeights[i] * texColor.rgb;
+      totalWeight += cameraWeights[i];
     }
+    color /= totalWeight;
+
   } else if (mode == 1) {
     // show blending field
+    float totalWeight = 0.0;
     for(int i = 0; i < CAMERA_COUNT; i++) {
       Camera c = cameras[i];
       color += cameraWeights[i] * c.color;
+      totalWeight += cameraWeights[i];
     }
+    color /= totalWeight;
   } else {
     color = nrm;
   }
 
-  gl_FragColor = vec4(clamp(color, vec3(0.0), vec3(1.0)), 1.0);
+  gl_FragColor = vec4(color, 1.0);
 }

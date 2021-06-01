@@ -78,7 +78,7 @@ void main() {
   }
 
   // threshold by kth largest angDiff
-  float angThresh = sortedAngDiffs[CAMERA_COUNT - CLOSEST_K];
+  float angThresh = sortedAngDiffs[CAMERA_COUNT - CLOSEST_K - 1];
 
   // calculate angBlends
   float angBlends[CAMERA_COUNT];
@@ -135,7 +135,7 @@ void main() {
   }
 
   // again threshold by the kth highest value
-  float angResThresh = sortedResDiffs[CAMERA_COUNT - CLOSEST_K];
+  float angResThresh = sortedResDiffs[CAMERA_COUNT - CLOSEST_K - 1];
 
   float angResFovBlends[CAMERA_COUNT];
   float sortedAngResFovBlends[CAMERA_COUNT];

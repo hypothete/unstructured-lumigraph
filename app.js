@@ -295,7 +295,7 @@ function makeProxy() {
     defines: {
       CAMERA_COUNT: cameraStructs.length,
       CLOSEST_K: 4,
-      RES_WEIGHT: 0.0,
+      RES_WEIGHT: 0.5,
     },
     uniforms: {
       cameras: {
