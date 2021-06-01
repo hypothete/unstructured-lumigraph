@@ -65,6 +65,7 @@ body {
 
 #show-controls {
   text-align: right;
+  margin-bottom: 1rem;
 }
 
 a {
