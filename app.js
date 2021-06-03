@@ -333,7 +333,9 @@ function makeProxy() {
     proxy.scale.y = -1;
   } else if (DATA_FOLDER === 'tv') {
     proxy.rotation.x = Math.PI / 2;
-    proxy.scale.set(1.8, 1.8, 1.8);
+    proxy.position.y -= 1;
+    proxy.position.z += 1;
+    proxy.scale.set(1.85, 1.85, 1.85);
   }
   console.log('Proxy loaded');
 }
