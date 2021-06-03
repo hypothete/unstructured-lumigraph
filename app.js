@@ -33,6 +33,9 @@ camera.position.set(0, 0, -20);
 
 if (DATA_FOLDER === 'statue' || DATA_FOLDER === 'kettle') {
   camera.up = new THREE.Vector3(1, 0, 0);
+} else if (DATA_FOLDER === 'tv') {
+  camera.up = new THREE.Vector3(0, 0, 1);
+  camera.position.set(0, -70, 0);
 }
 
 camera.lookAt(new THREE.Vector3(0, 0, 1000));
@@ -171,13 +174,16 @@ async function loadPoses() {
       rotMat.makeRotationFromQuaternion(quaternion);
       rotMat.invert();
 
-      const translation = new THREE.Vector3(
+      let position;
+      position = new THREE.Vector3(
         Number(fields[5]),
         Number(fields[6]),
         Number(fields[7])
       );
-      const position = translation.applyMatrix4(rotMat);
-      position.z *= -1;
+      if (DATA_FOLDER !== 'tv') {
+        position = position.applyMatrix4(rotMat);
+        position.z *= -1;
+      }
 
       return {
         imageId: Number(fields[0]),
@@ -215,13 +221,16 @@ async function loadPoses() {
       pose.fov,
       pose.aspect,
       0.01,
-      30
+      100
     );
     poseCamera.position.copy(pose.position);
     poseCamera.applyQuaternion(pose.quaternion);
 
     // this appears necessary translating COLMAP coordinates to THREE.js
-    poseCamera.rotation.y += Math.PI;
+    if (DATA_FOLDER !== 'tv') {
+      poseCamera.rotation.y += Math.PI;
+    }
+
     poseCamera.scale.x = -1;
     poseCamera.scale.y = -1;
 
@@ -319,10 +328,12 @@ function makeProxy() {
   } else if (DATA_FOLDER === 'kettle') {
     proxy.rotation.y = Math.PI;
     proxy.position.z += 17;
-  } else {
+  } else if (DATA_FOLDER === 'cube') {
     proxy.scale.x = -1;
     proxy.scale.y = -1;
+  } else if (DATA_FOLDER === 'tv') {
+    proxy.rotation.x = Math.PI / 2;
+    proxy.scale.set(1.8, 1.8, 1.8);
   }
-
   console.log('Proxy loaded');
 }
