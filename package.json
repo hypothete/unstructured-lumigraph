@@ -1,11 +1,10 @@
 {
   "name": "unstructured-lumigraph",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "main": "index.js",
   "author": "Duncan Alexander <hypo@hypothete.com>",
   "license": "MIT",
   "dependencies": {
-    "delaunator": "^5.0.0",
     "three": "^0.128.0"
   },
   "scripts": {

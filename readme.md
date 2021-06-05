@@ -1,6 +1,6 @@
 # Unstructured Lumigraph Renderer
 
-## [Try the demo on Github Pages](https://hypothete.github.io/unstructured-lumigraph/)
+## [View the web app on Github Pages](https://hypothete.github.io/unstructured-lumigraph/)
 
 ## Background
 
