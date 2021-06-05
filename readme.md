@@ -38,9 +38,17 @@ The images for the statue come from [ETH3D](https://www.eth3d.net/datasets). I u
 
 The TV dataset was made from the [Retro TV model](https://www.turbosquid.com/3d-models/free-c4d-model-retro-tv/815392) by Heat 3D on Turbosquid. I used Blender to create a scene with the TV and 25 cameras, and exported raytraced images of the scene along with a proxy model and camera pose data. The Blender file is available in the dataset's folder.
 
+### Preparting your own dataset
+
+First, set up a folder for your dataset in the `/data` folder of this project. Add an images folder with your source images inside of that.
+
+The app expects two text files, images.txt and cameras.txt to be inside your dataset's folder. If you are using COLMAP, you'll need to export the images and camera data in text format. It's an export option in the main file menu, and you can read more about the format [in the docs](https://colmap.github.io/format.html#text-format).
+
+For Blender, I've included some scripts that I used to create the TV dataset, but I also had to hand-edit the cameras.txt file slightly as well. PRs for more comprehensive Blender export scripts are welsome, this was my first time writing scripts for Blender.
+
 ## Contributing
 
-Issues and pull requests are welcome, there are still some problems with the `angResBlend` term in the shader that I would like to address.
+Issues and pull requests are welcome, there are still some problems with the `angResThresh` term in the vertex shader that I would like to address.
 
 ## License information
 
