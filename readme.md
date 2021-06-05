@@ -48,6 +48,8 @@ Issues and pull requests are welcome, there are still some issues with the `angR
 
 Buehler, C., Bosse, M., McMillan, L., Gortler, S., & Cohen, M. (2001). Unstructured lumigraph rendering. In Proceedings of the 28th annual conference on Computer graphics and interactive techniques (pp. 425–432).
 
+Files in the vendor folder are from [Three.js](https://threejs.org)
+
 fovBlend feathering based on [this Shadertoy](https://www.shadertoy.com/view/lsKSWR) by Ippokratis
 
 GLSL bubble sort implementation from [OpenGL Insights](https://github.com/OpenGLInsights/OpenGLInsightsCode)
