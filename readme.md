@@ -6,7 +6,9 @@
 
 ## Background
 
-This web app is an implementation of the rendering algorithm described in the paper ["Unstructured Lumigraph Rendering," by Buehler et al (2001)](https://groups.csail.mit.edu/graphics/pubs/siggraph2001_ulr.pdf). You can view the original video presentation by the authors [on Youtube](https://www.youtube.com/watch?v=za4HIll9N7c).
+A lumigraph is a function that allows a user to synthesize new views of a scene by sampling light rays from multiple camera viewpoints. An "unstructured" lumigraph can synthesize views from a set of cameras in arbitrary (but known) positions and rotations.
+
+This web app is an implementation of the unstructured lumigraph rendering algorithm described in the paper ["Unstructured Lumigraph Rendering," by Buehler et al (2001)](https://groups.csail.mit.edu/graphics/pubs/siggraph2001_ulr.pdf). You can view the original video presentation by the authors [on Youtube](https://www.youtube.com/watch?v=za4HIll9N7c).
 
 I completed this work as my final project for CS410/510 Computational Photography with Dr. Feng Liu at Portland State University, Spring 2021. You can view the slides from my [final presentation](https://docs.google.com/presentation/d/1byQT7v3yyZlvRdjut-qXuMcusRpOWliTGs806qFkE-A/edit?usp=sharing).
 
