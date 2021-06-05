@@ -1,10 +1,10 @@
 # Unstructured Lumigraph Renderer
 
-## [View the web app on Github Pages](https://hypothete.github.io/unstructured-lumigraph/)
+## [Click here to view the web app on Github Pages](https://hypothete.github.io/unstructured-lumigraph/)
 
 ## Background
 
-This web app is an implementation of the techniques described in the paper ["Unstructured Lumigraph Rendering," by Buehler et al (2001)](https://groups.csail.mit.edu/graphics/pubs/siggraph2001_ulr.pdf). [Here is a Youtube link](https://www.youtube.com/watch?v=za4HIll9N7c) to the original video presentation by the authors.
+This web app is an implementation of the rendering algorithm described in the paper ["Unstructured Lumigraph Rendering," by Buehler et al (2001)](https://groups.csail.mit.edu/graphics/pubs/siggraph2001_ulr.pdf). You can view the original video presentation by the authors [on Youtube](https://www.youtube.com/watch?v=za4HIll9N7c).
 
 I completed this work as my final project for CS410/510 Computational Photography with Dr. Feng Liu at Portland State University, Spring 2021. You can view the slides from my [final presentation](https://docs.google.com/presentation/d/1byQT7v3yyZlvRdjut-qXuMcusRpOWliTGs806qFkE-A/edit?usp=sharing).
 
@@ -38,13 +38,13 @@ The TV dataset was made from the [Retro TV model](https://www.turbosquid.com/3d-
 
 ## Contributing
 
-Issues and pull requests are welcome, there are still some issues with the `angResBlend` term in the shader that I would like to address.
+Issues and pull requests are welcome, there are still some problems with the `angResBlend` term in the shader that I would like to address.
 
 ## License information
 
 [MIT](./LICENSE)
 
-### References
+## References
 
 Buehler, C., Bosse, M., McMillan, L., Gortler, S., & Cohen, M. (2001). Unstructured lumigraph rendering. In Proceedings of the 28th annual conference on Computer graphics and interactive techniques (pp. 425–432).
 
