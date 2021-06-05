@@ -4,9 +4,6 @@
   "main": "index.js",
   "author": "Duncan Alexander <hypo@hypothete.com>",
   "license": "MIT",
-  "dependencies": {
-    "three": "^0.128.0"
-  },
   "scripts": {
     "start": "http-server"
   },
