@@ -156,7 +156,7 @@ async function loadPoses() {
     (res) => res.text()
   );
   poses = rawImgText
-    .split(`\r\n`)
+    .split(/\r?\n/)
     .filter((line) => {
       return line.toLocaleLowerCase().endsWith('jpg');
     })
@@ -197,7 +197,7 @@ async function loadPoses() {
   );
 
   rawCameraText
-    .split(`\r\n`)
+    .split(/\r?\n/)
     .filter((line) => {
       return line.length > 2 && !line.startsWith('#');
     })
