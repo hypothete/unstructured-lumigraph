@@ -2,6 +2,8 @@
 
 ## [Click here to view the web app on Github Pages](https://hypothete.github.io/unstructured-lumigraph/)
 
+<img src="./lum-modes.jpg" width="640" alt="3 shader modes of the lumigraph side by side: the rendered output, the camera blending field, and the proxy's normals" />
+
 ## Background
 
 This web app is an implementation of the rendering algorithm described in the paper ["Unstructured Lumigraph Rendering," by Buehler et al (2001)](https://groups.csail.mit.edu/graphics/pubs/siggraph2001_ulr.pdf). You can view the original video presentation by the authors [on Youtube](https://www.youtube.com/watch?v=za4HIll9N7c).
